@@ -1,0 +1,14 @@
+{
+    "name":"Skeleton Layout",
+    "description":"Add layout skeleton to any page",
+    "version":"0.1",
+    "manifest_version":2,
+    "content_scripts": [
+        {
+          "matches": ["<all_urls>"],
+          "js": ["skeleton.js"],
+          "css": ["skeleton.css"],
+          "run_at": "document_end"
+        }
+      ]
+    }
