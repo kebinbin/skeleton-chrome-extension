@@ -9,13 +9,11 @@
     "48": "images/icon-48.png",
     "128": "images/icon-128.png"
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["skeleton.js"],
-      "css": ["skeleton.css"],
-      "run_at": "document_end"
-    }
-  ],
-  "host_permissions": ["<all_urls>"]
+  "action": {
+    "default_title": "Click to show layout"
+  },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "background": {
+    "service_worker": "background.js"
+  }
 }
