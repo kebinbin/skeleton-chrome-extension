@@ -1,4 +1,6 @@
-// window.location.reload();
+/* TODO:
+  - Minimize classnames collisions posibilities.
+*/
 
 if (typeof clean === "undefined") {
   const clean = function () {
