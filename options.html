@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Skeleton Layout Configuration Options</title>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <div class="select-wrapper">
+      <select class="input" id="bg">
+        <option value="default">Default background</option>
+        <option value="colorful">Colorful background</option>
+        <option value="none">No background</option>
+      </select>
+    </div>
+    <label class="input">
+      <input type="checkbox" id="border" />
+      <span>Include borders</span>
+    </label>
+    <label class="input">
+      <input type="checkbox" id="bgOverride" />
+      <span>Override background</span>
+    </label>
+    <label class="input">
+      <input type="checkbox" id="forceReload" />
+      <span>Force reload on config changes</span>
+    </label>
+
+    <div class="bottom-bar">
+      <button id="save">Save</button>
+      <div id="status"></div>
+    </div>
+
+    <script src="options.js"></script>
+    <style>
+      body {
+        height: 100%;
+        overflow: hidden;
+        padding: 20px;
+      }
+
+      select {
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      .select-wrapper {
+        position: relative;
+      }
+
+      .select-wrapper::after {
+        content: "▼";
+        font-size: 1rem;
+        top: 7px;
+        right: 8px;
+        position: absolute;
+        color: #6e6e6e;
+        pointer-events: none;
+      }
+      #bg {
+        /* padding-left: 8px; */
+        padding: 8px;
+        margin-top: 15px;
+        margin-bottom: 20px;
+      }
+      input[type="checkbox"] {
+        margin-right: 6px;
+      }
+      .input {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 2px 0;
+        margin: 4px 0;
+        border-radius: 3px;
+      }
+      button {
+        border-radius: 3px;
+        border-width: 1px;
+        border-color: #6e6e6e;
+        padding: 8px 45px;
+      }
+      .bottom-bar {
+        border-top: 0.05rem solid #bebebe;
+        margin-top: 25px;
+        padding-top: 20px;
+        display: flex;
+        align-items: center;
+      }
+      #status {
+        display: flex;
+        flex-grow: 1;
+        padding: 0 5px;
+        justify-content: flex-end;
+        color: #6e6e6e;
+      }
+    </style>
+  </body>
+</html>

@@ -1,41 +1,25 @@
 if (typeof init === "undefined") {
   const init = function () {
-    const config = {
-      enabled: true,
-      style: {
-        border: true,
-        color: true,
-      },
-    };
+    let levels = [];
+    for (var i = 0; i < 10; i++) {
+      levels[i] = `skeleton-level-${i}`;
+    }
 
-    if (config.enabled) {
-      let colors = [];
-      for (var i = 0; i < 10; i++) {
-        colors[i] = `skeleton-color-${i}`;
+    function elementDepth(el) {
+      var depth = 0;
+      while (null !== el.parentElement) {
+        el = el.parentElement;
+        depth++;
       }
+      return depth;
+    }
 
-      function elementDepth(el) {
-        var depth = 0;
-        while (null !== el.parentElement) {
-          el = el.parentElement;
-          depth++;
-        }
-        return depth;
-      }
+    var elements = document.getElementsByTagName("*");
 
-      var elements = document.getElementsByTagName("*");
-
-      const { border, color } = config.style;
-      for (var i = 0, max = elements.length; i < max; i++) {
-        if (border) {
-          elements[i].classList.add("skeleton-border");
-        }
-        if (color) {
-          elements[i].classList.add(
-            colors[elementDepth(elements[i]) % colors.length]
-          );
-        }
-      }
+    for (var i = 0, max = elements.length; i < max; i++) {
+      elements[i].classList.add(
+        levels[elementDepth(elements[i]) % levels.length]
+      );
     }
   };
 
