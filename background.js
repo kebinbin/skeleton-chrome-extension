@@ -15,7 +15,7 @@ chrome.storage.local
 chrome.storage.sync
   .set({
     config: {
-      style: { border: true, bg: bg.default, bgOverride: false },
+      style: { border: true, bg: bg.default, overrideColor: false },
       forceReload: false,
     },
   })
@@ -48,7 +48,7 @@ const applyLayout = (tab) => {
     if (style.bg !== bg.none) {
       cssFiles.push(
         `./css/bg-${style.bg === bg.default ? "default" : "colorful"}${
-          style.bgOverride ? "-override.css" : ".css"
+          style.overrideColor ? "-override.css" : ".css"
         }`
       );
     }
@@ -59,7 +59,7 @@ const applyLayout = (tab) => {
     });
     chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      files: ["skeleton.js"],
+      files: ["./js/level.js"],
     });
     console.log(`Skeleton layout enabled for tab ${tab.id}.`);
   });
