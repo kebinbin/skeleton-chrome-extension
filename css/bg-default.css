@@ -1,42 +1,39 @@
-.skeleton-border {
-  outline: 0.075rem dashed rgba(255, 255, 255, 0.25);
-}
-.skeleton-color-0 {
+.skeleton-level-0 {
   background-color: rgba(255, 0, 0, 0);
 }
-.skeleton-color-1 {
+.skeleton-level-1 {
   background-color: rgba(255, 0, 0, 0.05);
 }
-.skeleton-color-2 {
+.skeleton-level-2 {
   background-color: rgba(255, 0, 0, 0.1);
 }
-.skeleton-color-3 {
+.skeleton-level-3 {
   background-color: rgba(255, 0, 0, 0.15);
 }
-.skeleton-color-4 {
+.skeleton-level-4 {
   background-color: rgba(255, 0, 0, 0.2);
 }
-.skeleton-color-5 {
+.skeleton-level-5 {
   background-color: rgba(255, 0, 0, 0.25);
 }
-.skeleton-color-6 {
+.skeleton-level-6 {
   background-color: rgba(255, 0, 0, 0.3);
 }
-.skeleton-color-7 {
+.skeleton-level-7 {
   background-color: rgba(255, 0, 0, 0.35);
 }
-.skeleton-color-8 {
+.skeleton-level-8 {
   background-color: rgba(255, 0, 0, 0.4);
 }
-.skeleton-color-9 {
+.skeleton-level-9 {
   background-color: rgba(255, 0, 0, 0.45);
 }
-.skeleton-color-10 {
+.skeleton-level-10 {
   background-color: rgba(255, 0, 0, 0.5);
 }
-.skeleton-color-11 {
+.skeleton-level-11 {
   background-color: rgba(255, 0, 0, 0.55);
 }
-.skeleton-color-12 {
+.skeleton-level-12 {
   background-color: rgba(255, 0, 0, 0.6);
 }
