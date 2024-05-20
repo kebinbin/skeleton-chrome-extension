@@ -1,8 +1,8 @@
 if (typeof init === "undefined") {
   const init = function () {
-    let levels = [];
-    for (var i = 0; i < 10; i++) {
-      levels[i] = `skeleton-level-${i}`;
+    let classes = [];
+    for (var i = 0; i <= 12; i++) {
+      classes[i] = `skeleton-x98h7f0-${i}`;
     }
 
     function elementDepth(el) {
@@ -18,7 +18,7 @@ if (typeof init === "undefined") {
 
     for (var i = 0, max = elements.length; i < max; i++) {
       elements[i].classList.add(
-        levels[elementDepth(elements[i]) % levels.length]
+        classes[elementDepth(elements[i]) % classes.length]
       );
     }
   };
