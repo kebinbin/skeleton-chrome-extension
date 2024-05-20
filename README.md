@@ -38,7 +38,7 @@ Check: Override border (disabled when default border)
 Check: Override text (disabled when default text color)
 Check: Force reload on config changes
 
-## The Purpose:
+## The Purpose
 
 - Practice CSS layout
 - No need to hover to see how things are placed.
