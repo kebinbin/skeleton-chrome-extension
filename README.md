@@ -40,8 +40,9 @@ Check: Force reload on config changes
 
 ## The Purpose
 
-- Practice CSS layout
+- Practice CSS layout structuring.
 - No need to hover to see how things are placed.
 - Speed-up designing/developing HTML/CSS process.
-- Catch layout issues and misalignments easily
+- See how your favorite websites structure their layouts.
+- Catch layout issues and misalignments easily.
 - Keep coding and see how layout changes are reflected real-time, no need to hover.
