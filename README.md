@@ -1,6 +1,7 @@
+![Skeleton Layout](images/icon.svg)
+
 # Skeleton Chrome Extension
 
-![Skeleton Layout](images/icon.svg)
 A minimal Chrome extension to help you visualize website layouts.
 
 ## Features
