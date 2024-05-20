@@ -14,29 +14,32 @@ A minimal Chrome extension to help you visualize website layouts.
 ## Config Options
 
 - Select:
-  Solid mono bg
-  Semi-transparent mono bg
-  Solid colorful bg
-  Semi-transparent colorful bg
-  Default bg (no override)
+
+  - Solid mono bg
+  - Semi-transparent mono bg
+  - Solid colorful bg
+  - Semi-transparent colorful bg
+  - Default bg (no override)
 
 - Select:
-  Dark thin border
-  Dark thick border
-  Light thin border
-  Light thick border
-  Default border (no override)
+
+  - Dark thin border
+  - Dark thick border
+  - Light thin border
+  - Light thick border
+  - Default border (no override)
 
 - Select:
-  Dark text color
-  Light text color
-  Default text color (no override)
 
-Check: Apply color by level
-Check: Override bg color (disabled when default bg)
-Check: Override border (disabled when default border)
-Check: Override text (disabled when default text color)
-Check: Force reload on config changes
+  - Dark text color
+  - Light text color
+  - Default text color (no override)
+
+- Check: Apply color by level
+- Check: Override bg color (disabled when default bg)
+- Check: Override border (disabled when default border)
+- Check: Override text (disabled when default text color)
+- Check: Force reload on config changes
 
 ## The Purpose
 
