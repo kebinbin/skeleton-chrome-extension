@@ -6,27 +6,60 @@
   </head>
   <body>
     <div class="select-wrapper">
-      <select class="input" id="bg">
+      <select class="input" id="bgColor">
+        <option value="solidMono">Solid mono background</option>
+        <option value="semitransparentMono">
+          Semi-transparent mono background
+        </option>
+        <option value="solidColorful">Solid colorful background</option>
+        <option value="semitransparentColorful">
+          Semi-transparent colorful background
+        </option>
         <option value="default">Default background</option>
-        <option value="colorful">Colorful background</option>
-        <option value="none">No background</option>
       </select>
     </div>
-    <label class="input">
-      <input type="checkbox" id="border" />
-      <span>Include borders</span>
-    </label>
-    <label class="input">
-      <input type="checkbox" id="overrideColor" />
-      <span>Override background and text color</span>
-    </label>
-    <label class="input">
+    <div class="select-wrapper">
+      <select class="input" id="borderType">
+        <option value="darkThin">Dark thin border</option>
+        <option value="darkThick">Dark thick border</option>
+        <option value="lightThin">Light thin border</option>
+        <option value="lightThick">Light thick border</option>
+        <option value="default">Default border</option>
+      </select>
+    </div>
+    <div class="select-wrapper">
+      <select class="input" id="textColor">
+        <option value="dark">Dark text color</option>
+        <option value="light">Light text color</option>
+        <option value="default">Default text color</option>
+      </select>
+    </div>
+    <div class="input">
+      <input type="checkbox" id="byLevel" />
+      <label>Apply background color by level</label>
+    </div>
+    <div class="input">
+      <input type="checkbox" id="overrideBgColor" />
+      <label>Override background color</label>
+    </div>
+    <div class="input">
+      <input type="checkbox" id="overrideBorder" />
+      <label>Override border</label>
+    </div>
+    <div class="input">
+      <input type="checkbox" id="overrideTextColor" />
+      <label>Override text color</label>
+    </div>
+    <div class="input">
       <input type="checkbox" id="forceReload" />
-      <span>Force reload on config changes</span>
-    </label>
+      <label>Force reload on config changes</label>
+    </div>
 
     <div class="bottom-bar">
-      <button id="save">Save</button>
+      <div class="buttons">
+        <button id="save">SAVE</button>
+        <button id="saveAndClose">SAVE / CLOSE</button>
+      </div>
       <div id="status"></div>
     </div>
 
@@ -42,6 +75,20 @@
         -webkit-appearance: none;
         appearance: none;
       }
+      #bgColor,
+      #borderType,
+      #textColor {
+        padding: 10px 12px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      #bgColor {
+        margin-top: 15px;
+      }
+      #textColor {
+        margin-bottom: 20px;
+      }
 
       .select-wrapper {
         position: relative;
@@ -49,21 +96,19 @@
 
       .select-wrapper::after {
         content: "▼";
-        font-size: 1rem;
-        top: 7px;
-        right: 8px;
+        font-size: 0.75rem;
+        top: 12px;
+        right: 12px;
         position: absolute;
         color: #6e6e6e;
         pointer-events: none;
       }
-      #bg {
-        /* padding-left: 8px; */
-        padding: 8px;
-        margin-top: 15px;
-        margin-bottom: 20px;
-      }
+
       input[type="checkbox"] {
         margin-right: 6px;
+      }
+      input[type="checkbox"]:disabled + label {
+        color: #6e6e6e;
       }
       .input {
         display: flex;
@@ -73,23 +118,43 @@
         margin: 4px 0;
         border-radius: 3px;
       }
+      .buttons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+      }
       button {
+        display: flex;
+        flex-grow: 1;
+        text-align: center;
+        justify-content: center;
         border-radius: 3px;
         border-width: 1px;
-        border-color: #6e6e6e;
-        padding: 8px 45px;
+        box-shadow: none;
+        border-color: rgb(52, 52, 52);
+        padding: 8px 20px;
+        font-weight: 600;
+        color: rgb(52, 52, 52);
+        background-color: #fff;
+      }
+
+      #saveAndClose {
+        background-color: rgb(52, 52, 52);
+        color: #fff;
       }
       .bottom-bar {
         border-top: 0.05rem solid #bebebe;
         margin-top: 25px;
         padding-top: 20px;
-        display: flex;
-        align-items: center;
+        /* display: flex;
+        align-items: center; */
       }
       #status {
         display: flex;
         flex-grow: 1;
         padding: 0 5px;
+        margin-top: 10px;
+        height: 10px;
         justify-content: flex-end;
         color: #6e6e6e;
       }
