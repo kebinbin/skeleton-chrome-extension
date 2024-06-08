@@ -43,9 +43,6 @@ A minimal Chrome extension to help you visualize website layouts.
 
 ## The Purpose
 
-- Practice CSS layout structuring.
-- No need to hover to see how things are placed.
-- Speed-up designing/developing HTML/CSS process.
-- See how your favorite websites structure their layouts.
 - Catch layout issues and misalignments easily.
-- Keep coding and see how layout changes are reflected real-time, no need to hover.
+- Speed-up the process of designing and developing HTML/CSS layouts.
+- See your favorite websites layouts structure.
