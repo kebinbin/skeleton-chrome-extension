@@ -1,227 +1,695 @@
-const bgColor = {
-  solidMono: {
-    value: "solidMono",
-    file: "./css/bg/mono-solid.css",
-    override: "./css/bg/override/mono-solid.css",
-  },
-  semitransparentMono: {
-    value: "semitransparentMono",
-    file: "./css/bg/mono-semitransparent.css",
-    override: "./css/bg/override/mono-semitransparent.css",
-  },
-  solidColorful: {
-    value: "solidColorful",
-    file: "./css/bg/colorful-solid.css",
-    override: "./css/bg/override/colorful-solid.css",
-  },
-  semitransparentColorful: {
-    value: "semitransparentColorful",
-    file: "./css/bg/colorful-semitransparent.css",
-    override: "./css/bg/override/colorful-semitransparent.css",
-  },
-  default: { value: "default", file: null },
-};
+import {
+  DEFAULT_CONFIG,
+  QUICK_MODES,
+  buildStyleInjections,
+  configForMode,
+  isStoredInjection,
+  loadStoredConfig,
+  normalizeConfig,
+  UnsupportedConfigVersionError,
+} from "./shared/config.js";
 
-const borderType = {
-  darkThin: {
-    value: "darkThin",
-    file: "./css/border/thin-dark.css",
-    override: "./css/border/override/thin-dark.css",
-  },
-  darkThick: {
-    value: "darkThick",
-    file: "./css/border/thick-dark.css",
-    override: "./css/border/override/thick-dark.css",
-  },
-  lightThin: {
-    value: "lightThin",
-    file: "./css/border/thin-light.css",
-    override: "./css/border/override/thin-light.css",
-  },
-  lightThick: {
-    value: "lightThick",
-    file: "./css/border/thick-light.css",
-    override: "./css/border/override/thick-light.css",
-  },
-  default: { value: "default", file: null },
-};
+const SESSION_PREFIX = "activeTab:";
+const PREVIEW_PORT_NAME = "settings-preview";
+const OPEN_SETTINGS_MENU_ID = "open-settings-side-panel";
+const QUICK_MODE_MENU_ID = "quick-visualization-mode";
+const MENU_MODES = Object.freeze({
+  "quick-mode-full": "full",
+  "quick-mode-outline": "outline",
+  "quick-mode-inspector": "inspector",
+});
+const ENABLED_BADGE = Object.freeze({
+  text: "ON",
+  color: "#49372F",
+  title: "Hide layout structure",
+});
+const ERROR_BADGE = Object.freeze({
+  text: "!",
+  color: "#EC7814",
+});
+const MODE_BADGES = Object.freeze({
+  full: ENABLED_BADGE,
+  outline: Object.freeze({
+    text: "OL",
+    color: "#69707A",
+    title: "Skeleton Layout: outline-only mode",
+  }),
+  inspector: Object.freeze({
+    text: "IN",
+    color: "#1A73E8",
+    title: "Skeleton Layout: hover inspector",
+  }),
+});
 
-const textColor = {
-  dark: {
-    value: "dark",
-    file: "./css/text/dark.css",
-    override: "./css/text/override/dark.css",
-  },
-  light: {
-    value: "light",
-    file: "./css/text/light.css",
-    override: "./css/text/override/light.css",
-  },
-  default: { value: "default", file: null },
-};
+const tabLocks = new Map();
+let previewConnectionCounter = 0;
 
-chrome.storage.local
-  .set({
-    activeTabsIds: [],
-  })
-  .then(() => {
-    console.log("Initialized local storage.");
-  });
+function sessionKey(tabId) {
+  return `${SESSION_PREFIX}${tabId}`;
+}
 
-chrome.storage.sync
-  .set({
-    config: {
-      style: {
-        bgColor: bgColor.solidMono.value,
-        borderType: borderType.lightThin.value,
-        textColor: textColor.light.value,
-        byLevel: true,
-        overrideBgColor: true,
-        overrideBorder: true,
-        overrideTextColor: true,
-      },
-      forceReload: false,
+async function getConfig() {
+  const { config } = await chrome.storage.sync.get("config");
+  let normalized;
+  try {
+    normalized = loadStoredConfig(config);
+  } catch (error) {
+    if (!(error instanceof UnsupportedConfigVersionError)) throw error;
+    console.warn("Skeleton Layout found settings from a newer version.", error);
+    return normalizeConfig(DEFAULT_CONFIG);
+  }
+
+  if (JSON.stringify(config) !== JSON.stringify(normalized)) {
+    await chrome.storage.sync.set({ config: normalized });
+  }
+
+  return normalized;
+}
+
+async function initializeConfig() {
+  const { config } = await chrome.storage.sync.get("config");
+  if (!config) {
+    await chrome.storage.sync.set({ config: normalizeConfig(DEFAULT_CONFIG) });
+    return;
+  }
+
+  let loaded;
+  try {
+    loaded = loadStoredConfig(config);
+  } catch (error) {
+    if (error instanceof UnsupportedConfigVersionError) {
+      console.warn("Skeleton Layout kept settings from a newer version.", error);
+      return;
+    }
+    throw error;
+  }
+  if (JSON.stringify(config) !== JSON.stringify(loaded)) {
+    await chrome.storage.sync.set({ config: loaded });
+  }
+}
+
+async function getTabState(tabId) {
+  const key = sessionKey(tabId);
+  const result = await chrome.storage.session.get(key);
+  const state = result[key];
+
+  if (!state || !Array.isArray(state.injections)) {
+    return null;
+  }
+
+  return {
+    injections: state.injections.filter(isStoredInjection),
+    overflowDetection: state.overflowDetection === true,
+    elementInspector: state.elementInspector === true,
+    mode: QUICK_MODES.includes(state.mode) ? state.mode : "full",
+    previewOwner:
+      typeof state.previewOwner === "string" ? state.previewOwner : null,
+  };
+}
+
+async function setTabState(
+  tabId,
+  injections,
+  overflowDetection,
+  elementInspector,
+  mode,
+  previewOwner = null,
+) {
+  await chrome.storage.session.set({
+    [sessionKey(tabId)]: {
+      injections,
+      overflowDetection,
+      elementInspector,
+      mode,
+      previewOwner,
     },
-  })
-  .then(() => {
-    console.log("Initialized configurations in sync storage.");
   });
+}
 
-chrome.storage.onChanged.addListener((changes, namespace) => {
-  for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
-    console.log(
-      `Storage key "${key}" in namespace "${namespace}" changed.`,
-      `Old value was "${JSON.stringify(
-        oldValue
-      )}", new value is "${JSON.stringify(newValue)}".`
-    );
-  }
-});
+async function clearTabState(tabId) {
+  await chrome.storage.session.remove(sessionKey(tabId));
+}
 
-const cssFiles = (config) => {
-  const { style } = config;
-  const cssFiles = [];
+async function updateAction(tabId, badge) {
+  await Promise.all([
+    chrome.action.setBadgeText({ tabId, text: badge?.text ?? "" }),
+    chrome.action.setTitle({
+      tabId,
+      title: badge?.title ?? "Show layout structure",
+    }),
+    badge?.color
+      ? chrome.action.setBadgeBackgroundColor({ tabId, color: badge.color })
+      : Promise.resolve(),
+  ]);
+}
 
-  if (
-    style.bgColor !== bgColor.default.value ||
-    bgColor[style.bgColor].file != null
-  ) {
-    cssFiles.push(
-      !style.overrideBgColor
-        ? bgColor[style.bgColor].file
-        : bgColor[style.bgColor].override
-    );
-  }
-  if (
-    style.borderType !== borderType.default.value ||
-    borderType[style.borderType].file != null
-  ) {
-    cssFiles.push(
-      !style.overrideBorder
-        ? borderType[style.borderType].file
-        : borderType[style.borderType].override
-    );
-  }
-  if (
-    style.textColor !== textColor.default.value ||
-    textColor[style.textColor].file != null
-  ) {
-    cssFiles.push(
-      !style.overrideTextColor
-        ? textColor[style.textColor].file
-        : textColor[style.textColor].override
-    );
-  }
-  console.log("cssFiles = " + cssFiles);
+async function syncActionWithTabState(tabId) {
+  const state = await getTabState(tabId);
+  await updateAction(tabId, state ? MODE_BADGES[state.mode] : null);
+}
 
-  return cssFiles;
-};
+async function showError(tabId, message) {
+  await updateAction(tabId, {
+    ...ERROR_BADGE,
+    title: `Skeleton Layout: ${message}`,
+  });
+}
 
-const jsFiles = (config) => {
-  const { style } = config;
-  if (style.byLevel) {
-    return ["./js/level.js"];
-  } else {
-    return ["./js/element.js"];
-  }
-};
+async function removeInjections(tabId, injections) {
+  const removals = injections.map(({ css, origin }) =>
+    chrome.scripting
+      .removeCSS({ target: { tabId }, css, origin })
+      .catch(() => undefined),
+  );
+  await Promise.all(removals);
+}
 
-const applyLayout = (tab) => {
-  chrome.storage.sync.get(["config"]).then((result) => {
-    console.log(
-      "Read this config when applying changes: " + JSON.stringify(result.config)
-    );
+function injectionKey({ css, origin }) {
+  return `${origin}\u0000${css}`;
+}
 
-    const cssFilesArr = cssFiles(result.config);
-    if (cssFilesArr.length > 0) {
-      chrome.scripting.insertCSS({
-        target: { tabId: tab.id },
-        files: cssFilesArr,
-      });
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: jsFiles(result.config),
-      });
-      console.log(`Skeleton layout enabled for tab ${tab.id}.`);
-    } else {
-      console.log("Nothing to inject here...");
+async function enableOverflowDetection(tabId) {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    files: ["content/overflow-logic.js", "content/overflow.js"],
+  });
+}
+
+async function disableOverflowDetection(tabId) {
+  await chrome.scripting
+    .executeScript({
+      target: { tabId },
+      func: () => {
+        globalThis.__skeletonLayoutOverflowOverlay?.destroy();
+        delete globalThis.__skeletonLayoutOverflowLogic;
+      },
+    })
+    .catch(() => undefined);
+}
+
+async function enableElementInspector(tabId) {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    files: [
+      "content/element-inspector-logic.js",
+      "content/element-inspector.js",
+    ],
+  });
+}
+
+async function disableElementInspector(tabId) {
+  await chrome.scripting
+    .executeScript({
+      target: { tabId },
+      func: () => {
+        globalThis.__skeletonLayoutElementInspector?.destroy();
+        delete globalThis.__skeletonLayoutElementInspectorLogic;
+      },
+    })
+    .catch(() => undefined);
+}
+
+async function disableForTab(tabId) {
+  const state = await getTabState(tabId);
+  if (state) {
+    await removeInjections(tabId, state.injections);
+    if (state.overflowDetection) {
+      await disableOverflowDetection(tabId);
     }
-  });
-};
-
-const removeLayout = (tab) => {
-  chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    files: ["./js/clean.js"],
-  });
-  console.log(`Skeleton layout removed for tab ${tab.id}.`);
-};
-/* 
-  Toggle functionality for this tab.id: 
-    - If it exists in array, remove it and run clean.  
-    - If it does not exist, then added it and run apply.
-*/
-chrome.action.onClicked.addListener((tab) => {
-  chrome.storage.local.get(["activeTabsIds"]).then((result) => {
-    const prevActiveTabsIds = result.activeTabsIds;
-
-    const tabIndex = prevActiveTabsIds.findIndex((tabId) => tabId === tab.id);
-
-    if (tabIndex === -1) {
-      chrome.storage.local.set({
-        activeTabsIds: [...prevActiveTabsIds, tab.id],
-      });
-      applyLayout(tab);
-    } else {
-      chrome.storage.local.set({
-        activeTabsIds: [
-          ...prevActiveTabsIds.slice(0, tabIndex),
-          ...prevActiveTabsIds.slice(tabIndex + 1),
-        ],
-      });
-      removeLayout(tab);
+    if (state.elementInspector) {
+      await disableElementInspector(tabId);
     }
-  });
-});
+  }
+  await clearTabState(tabId);
+  await updateAction(tabId, null);
+}
 
-/* 
-  Re-execute apply if the update comes from a tab.id in activeTabsIds: 
-*/
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (
-    changeInfo.status == "complete" &&
-    tab.status == "complete" &&
-    tab.url != undefined
-  ) {
-    chrome.storage.local.get(["activeTabsIds"]).then((result) => {
-      const prevActiveTabsIds = result.activeTabsIds;
-      const tabIndex = prevActiveTabsIds.findIndex((tabId) => tabId === tab.id);
-      if (tabIndex !== -1) {
-        applyLayout(tab);
-        console.log(
-          `Skeleton layout has been replied on tab ${tab.id} due to tab re-fresh.`
-        );
+async function enableForTab(
+  tabId,
+  config = null,
+  mode = null,
+  { documentChanged = false, previewOwner = null } = {},
+) {
+  const previousState = await getTabState(tabId);
+  const baseConfig = normalizeConfig(config ?? (await getConfig()));
+  const normalizedMode = QUICK_MODES.includes(mode)
+    ? mode
+    : baseConfig.style.mode;
+  const normalizedConfig = configForMode(baseConfig, normalizedMode);
+  const injections = buildStyleInjections(normalizedConfig);
+  const overflowDetection = normalizedConfig.style.overflowDetection;
+  const elementInspector = normalizedConfig.style.elementInspector;
+  if (injections.length === 0 && !overflowDetection && !elementInspector) {
+    if (previousState && !documentChanged) {
+      await removeInjections(tabId, previousState.injections);
+      if (previousState.overflowDetection) {
+        await disableOverflowDetection(tabId);
       }
-    });
+      if (previousState.elementInspector) {
+        await disableElementInspector(tabId);
+      }
+    }
+    await clearTabState(tabId);
+    await showError(tabId, "Select at least one visualization style");
+    return;
   }
+
+  const previousInjections =
+    previousState && !documentChanged ? previousState.injections : [];
+  const previousKeys = new Set(previousInjections.map(injectionKey));
+  const nextKeys = new Set(injections.map(injectionKey));
+  const additions = injections.filter(
+    (injection) => !previousKeys.has(injectionKey(injection)),
+  );
+  const removals = previousInjections.filter(
+    (injection) => !nextKeys.has(injectionKey(injection)),
+  );
+  const inserted = [];
+  try {
+    // Insert replacements first so the page never renders without an active
+    // visualization between settings changes.
+    for (const injection of additions) {
+      await chrome.scripting.insertCSS({
+        target: { tabId },
+        css: injection.css,
+        origin: injection.origin,
+      });
+      inserted.push(injection);
+    }
+
+    if (
+      overflowDetection &&
+      (documentChanged || !previousState?.overflowDetection)
+    ) {
+      await enableOverflowDetection(tabId);
+    }
+
+    if (
+      elementInspector &&
+      (documentChanged || !previousState?.elementInspector)
+    ) {
+      await enableElementInspector(tabId);
+    }
+
+    // Persist the new working set before cleaning up the previous one. If
+    // session storage fails, the prior visualization is still intact and the
+    // additions below can be rolled back without leaving the page unstyled.
+    await setTabState(
+      tabId,
+      injections,
+      overflowDetection,
+      elementInspector,
+      normalizedMode,
+      previewOwner,
+    );
+
+    await removeInjections(tabId, removals);
+    if (
+      previousState?.overflowDetection &&
+      !overflowDetection &&
+      !documentChanged
+    ) {
+      await disableOverflowDetection(tabId);
+    }
+    if (
+      previousState?.elementInspector &&
+      !elementInspector &&
+      !documentChanged
+    ) {
+      await disableElementInspector(tabId);
+    }
+
+    await updateAction(tabId, MODE_BADGES[normalizedMode]).catch((error) => {
+      console.warn("Skeleton Layout could not update its toolbar badge.", error);
+    });
+  } catch (error) {
+    await removeInjections(tabId, inserted);
+    if (overflowDetection && !previousState?.overflowDetection) {
+      await disableOverflowDetection(tabId);
+    }
+    if (elementInspector && !previousState?.elementInspector) {
+      await disableElementInspector(tabId);
+    }
+    if (previousState && !documentChanged) {
+      await updateAction(tabId, MODE_BADGES[previousState.mode]);
+    } else {
+      await clearTabState(tabId);
+      await showError(
+        tabId,
+        "this page is protected by Chrome or has not granted site access",
+      );
+    }
+    console.warn("Skeleton Layout could not style the tab.", error);
+  }
+}
+
+function withTabLock(tabId, operation) {
+  const previous = tabLocks.get(tabId) ?? Promise.resolve();
+  const current = previous.catch(() => undefined).then(operation);
+  tabLocks.set(tabId, current);
+
+  return current.finally(() => {
+    if (tabLocks.get(tabId) === current) {
+      tabLocks.delete(tabId);
+    }
+  });
+}
+
+async function activeTabIds() {
+  const session = await chrome.storage.session.get(null);
+  return Object.keys(session)
+    .filter((key) => key.startsWith(SESSION_PREFIX))
+    .map((key) => Number(key.slice(SESSION_PREFIX.length)))
+    .filter(Number.isInteger);
+}
+
+async function restoreSessionActions() {
+  const tabIds = await activeTabIds();
+  await Promise.all(
+    tabIds.map(async (tabId) => {
+      try {
+        await chrome.tabs.get(tabId);
+      } catch {
+        tabLocks.delete(tabId);
+        await clearTabState(tabId);
+        return;
+      }
+      await syncActionWithTabState(tabId).catch((error) => {
+        console.warn(
+          `Skeleton Layout could not restore the badge for tab ${tabId}.`,
+          error,
+        );
+      });
+    }),
+  );
+}
+
+chrome.runtime.onInstalled.addListener(() => {
+  initializeConfig().catch((error) => {
+    console.error("Skeleton Layout could not initialize settings.", error);
+  });
+
+  chrome.contextMenus
+    .removeAll()
+    .then(() => {
+      chrome.contextMenus.create({
+        id: OPEN_SETTINGS_MENU_ID,
+        title: "Open settings beside this page",
+        contexts: ["action"],
+      });
+      chrome.contextMenus.create({
+        id: QUICK_MODE_MENU_ID,
+        title: "Quick mode",
+        contexts: ["action"],
+      });
+      for (const [id, title] of [
+        ["quick-mode-full", "Full visualization"],
+        ["quick-mode-outline", "Outline only"],
+        ["quick-mode-inspector", "Hover inspector"],
+      ]) {
+        chrome.contextMenus.create({
+          id,
+          parentId: QUICK_MODE_MENU_ID,
+          title,
+          contexts: ["action"],
+        });
+      }
+    })
+    .catch((error) => {
+      console.warn("Skeleton Layout could not create its settings menu.", error);
+    });
 });
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (!Number.isInteger(tab?.id)) {
+    return;
+  }
+
+  if (info.menuItemId === OPEN_SETTINGS_MENU_ID) {
+    chrome.sidePanel.open({ tabId: tab.id }).catch((error) => {
+      console.warn("Skeleton Layout could not open its settings panel.", error);
+    });
+    return;
+  }
+
+  const mode = MENU_MODES[info.menuItemId];
+  if (!mode) return;
+  withTabLock(tab.id, () => enableForTab(tab.id, null, mode)).catch((error) => {
+    console.warn("Skeleton Layout quick mode failed.", error);
+  });
+});
+
+chrome.action.onClicked.addListener((tab) => {
+  if (!Number.isInteger(tab.id)) {
+    return;
+  }
+
+  withTabLock(tab.id, async () => {
+    const state = await getTabState(tab.id);
+    if (state) {
+      await disableForTab(tab.id);
+    } else {
+      await enableForTab(tab.id);
+    }
+  }).catch((error) => {
+    console.error("Skeleton Layout toggle failed.", error);
+  });
+});
+
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== PREVIEW_PORT_NAME) return;
+
+  const owner = `settings-preview:${++previewConnectionCounter}`;
+  const previewedTabIds = new Set();
+  let queue = Promise.resolve();
+  let disconnected = false;
+
+  const respond = (requestId, response) => {
+    if (disconnected || requestId === undefined) return;
+    try {
+      port.postMessage({ requestId, ...response });
+    } catch {
+      // The panel may close between completing the operation and responding.
+    }
+  };
+
+  const clearPreviewOwnership = async () => {
+    const tabIds = [...previewedTabIds];
+    previewedTabIds.clear();
+    await Promise.all(
+      tabIds.map((tabId) =>
+        withTabLock(tabId, async () => {
+          const state = await getTabState(tabId);
+          if (state?.previewOwner !== owner) return;
+          await setTabState(
+            tabId,
+            state.injections,
+            state.overflowDetection,
+            state.elementInspector,
+            state.mode,
+          );
+        }),
+      ),
+    );
+  };
+
+  const revertPreviews = async () => {
+    const tabIds = [...previewedTabIds];
+    previewedTabIds.clear();
+    if (tabIds.length === 0) return;
+    const savedConfig = await getConfig();
+    await Promise.all(
+      tabIds.map((tabId) =>
+        withTabLock(tabId, async () => {
+          const state = await getTabState(tabId);
+          if (state?.previewOwner !== owner) return;
+          await enableForTab(
+            tabId,
+            savedConfig,
+            savedConfig.style.mode,
+          );
+        }),
+      ),
+    );
+  };
+
+  const handleMessage = async (message) => {
+    if (message?.type === "commit") {
+      await clearPreviewOwnership();
+      return { committed: true };
+    }
+    if (message?.type === "revert") {
+      await revertPreviews();
+      return { reverted: true };
+    }
+    if (message?.type !== "preview") {
+      return { previewed: false, reason: "unavailable" };
+    }
+
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (!Number.isInteger(tab?.id)) {
+      return { previewed: false, reason: "unavailable" };
+    }
+
+    return withTabLock(tab.id, async () => {
+      const state = await getTabState(tab.id);
+      if (!state) {
+        return { previewed: false, reason: "disabled" };
+      }
+
+      const config = normalizeConfig(message.config);
+      previewedTabIds.add(tab.id);
+      await enableForTab(tab.id, config, config.style.mode, {
+        previewOwner: owner,
+      });
+      const updatedState = await getTabState(tab.id);
+      return updatedState?.previewOwner === owner
+        ? { previewed: true, mode: updatedState.mode }
+        : { previewed: false, reason: "unavailable" };
+    });
+  };
+
+  port.onMessage.addListener((message) => {
+    queue = queue
+      .then(() => handleMessage(message))
+      .then((response) => respond(message?.requestId, response))
+      .catch((error) => {
+        console.warn("Skeleton Layout live preview failed.", error);
+        respond(message?.requestId, {
+          previewed: false,
+          reason: "unavailable",
+        });
+      });
+  });
+
+  port.onDisconnect.addListener(() => {
+    disconnected = true;
+    queue = queue
+      .catch(() => undefined)
+      .then(revertPreviews)
+      .catch((error) => {
+        console.warn("Skeleton Layout could not revert a preview.", error);
+      });
+  });
+});
+
+chrome.commands.onCommand.addListener((command) => {
+  const commandModes = {
+    "activate-full-mode": "full",
+    "activate-outline-mode": "outline",
+    "activate-inspector-mode": "inspector",
+  };
+  if (command !== "cycle-visualization-mode" && !commandModes[command]) {
+    return;
+  }
+
+  chrome.tabs
+    .query({ active: true, currentWindow: true })
+    .then(([tab]) => {
+      if (!Number.isInteger(tab?.id)) return;
+      return withTabLock(tab.id, async () => {
+        const state = await getTabState(tab.id);
+        const mode =
+          command === "cycle-visualization-mode"
+            ? QUICK_MODES[
+                state ? (QUICK_MODES.indexOf(state.mode) + 1) % QUICK_MODES.length : 0
+              ]
+            : commandModes[command];
+        await enableForTab(tab.id, null, mode);
+      });
+    })
+    .catch((error) => {
+      console.warn("Skeleton Layout mode command failed.", error);
+    });
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status !== "complete") {
+    return;
+  }
+
+  withTabLock(tabId, async () => {
+    const state = await getTabState(tabId);
+    if (!state) return;
+
+    const inserted = [];
+    try {
+      for (const injection of state.injections) {
+        await chrome.scripting.insertCSS({
+          target: { tabId },
+          css: injection.css,
+          origin: injection.origin,
+        });
+        inserted.push(injection);
+      }
+      if (state.overflowDetection) await enableOverflowDetection(tabId);
+      if (state.elementInspector) await enableElementInspector(tabId);
+      await setTabState(
+        tabId,
+        state.injections,
+        state.overflowDetection,
+        state.elementInspector,
+        state.mode,
+        state.previewOwner,
+      );
+      await updateAction(tabId, MODE_BADGES[state.mode]);
+    } catch (error) {
+      await removeInjections(tabId, inserted);
+      await clearTabState(tabId);
+      await showError(
+        tabId,
+        "this page is protected by Chrome or has not granted site access",
+      );
+      throw error;
+    }
+  }).catch((error) => {
+    console.warn("Skeleton Layout could not reapply after navigation.", error);
+  });
+});
+
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  syncActionWithTabState(tabId).catch((error) => {
+    console.warn("Skeleton Layout could not restore its toolbar state.", error);
+  });
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  tabLocks.delete(tabId);
+  clearTabState(tabId).catch(() => undefined);
+});
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "sync" || !changes.config) {
+    return;
+  }
+
+  let config;
+  try {
+    config = loadStoredConfig(changes.config.newValue);
+  } catch (error) {
+    console.warn("Skeleton Layout ignored incompatible settings.", error);
+    return;
+  }
+  activeTabIds()
+    .then((tabIds) =>
+      Promise.all(
+        tabIds.map((tabId) =>
+          withTabLock(tabId, async () => {
+            const state = await getTabState(tabId);
+            if (state) await enableForTab(tabId, config, config.style.mode);
+          }),
+        ),
+      ),
+    )
+    .catch((error) => {
+      console.warn("Skeleton Layout could not apply updated settings.", error);
+    });
+});
+
+restoreSessionActions()
+  .catch((error) => {
+    console.warn("Skeleton Layout could not restore toolbar badges.", error);
+  });
