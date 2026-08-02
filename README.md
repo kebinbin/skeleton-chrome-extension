@@ -18,12 +18,16 @@ Skeleton Layout is a focused Chrome extension for frontend engineers and designe
 
 ## Why it exists
 
-Chrome DevTools offers excellent element inspection and dedicated Grid, Flexbox, paint, and compositor overlays. Those tools are precise, but they require DevTools and focus on selected layout systems or elements. Skeleton Layout provides a complementary, persistent whole-page view from the toolbar.
+Have you ever added random background colors or borders to HTML elements just to see what the layout is actually doing while you code? That temporary CSS is useful, but writing and removing it repeatedly interrupts the work.
+
+Skeleton Layout grew from that habit. It turns the manual workaround into a reusable visualization that can be toggled from the toolbar while the page changes beside the editor.
+
+Chrome DevTools offers excellent element inspection and dedicated Grid, Flexbox, paint, and compositor overlays. Those tools are precise, but they require DevTools and focus on selected layout systems or elements. Skeleton Layout provides a complementary, persistent whole-page view.
 
 ## Features
 
 - One-click toolbar toggle with a visible `ON` badge.
-- A six-color 1970s editorial spectrum ordered for strong contrast between neighboring levels.
+- A six-color palette ordered for strong contrast between neighboring levels.
 - Color by DOM nesting depth or by sibling position.
 - Adjustable background opacity from 10% to 100%.
 - Six editable base colors with an accumulated lightness control for later levels.
@@ -132,6 +136,10 @@ After changing the extension, select **Reload** for Skeleton Layout on `chrome:/
 ## Publishing
 
 See [STORE_LISTING.md](STORE_LISTING.md) for prepared listing copy, permission justifications, QA scenarios, and the remaining release-asset checklist.
+
+## Support and feedback
+
+Use the structured GitHub forms to [report a bug](https://github.com/kebinbin/skeleton-chrome-extension/issues/new?template=bug_report.yml) or [suggest a focused improvement](https://github.com/kebinbin/skeleton-chrome-extension/issues/new?template=feature_request.yml). Remove private page content and account information from screenshots or recordings before attaching them.
 
 ## Project status
 

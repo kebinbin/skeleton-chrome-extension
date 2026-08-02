@@ -8,13 +8,15 @@ Skeleton Layout
 
 ### Summary
 
-Reveal page structure with one-click retro layout colors and outlines—without opening DevTools.
+Reveal page structure with one-click layout colors and outlines—without opening DevTools.
 
 ### Detailed description
 
+Frontend developers often add temporary background colors or borders to HTML elements just to understand what a layout is doing. Skeleton Layout turns that familiar debugging habit into a reusable visualization you can toggle instead of repeatedly writing and removing temporary CSS.
+
 Skeleton Layout helps frontend engineers and designers understand page structure at a glance. Click the toolbar icon to color page elements by nesting depth or sibling position and add non-layout-shifting diagnostic outlines.
 
-Use it to spot unexpected wrappers, spacing inconsistencies, overflow, stacking patterns, and component boundaries while developing or studying a page. Choose between a vivid 1970s editorial spectrum and a neutral monochrome scale, then tune transparency, outlines, text color, and cascade overrides.
+Use it to spot unexpected wrappers, spacing inconsistencies, overflow, stacking patterns, and component boundaries while developing or studying a page. Choose between a colorful palette and a neutral monochrome scale, then tune transparency, outlines, text color, and cascade overrides.
 
 The main settings mode, keyboard shortcuts, or the toolbar right-click Quick mode menu switch between full visualization, outline-only structure, and the hover inspector. Toolbar quick modes do not change saved preferences.
 
@@ -63,14 +65,14 @@ Review these answers again in the current Developer Dashboard before submission;
 
 ## Required store assets
 
-- [ ] 128×128 store icon (the packaged icon is ready; export separately if requested).
+- [x] 128×128 store icon (`images/icon-128.png`).
 - [ ] At least one 1280×800 or 640×400 screenshot showing the overlay on a representative development page.
 - [ ] A screenshot of the settings experience.
 - [ ] Optional 440×280 small promotional tile.
 - [ ] Optional 1400×560 marquee promotional tile.
-- [ ] Publicly hosted privacy-policy URL containing the text from `PRIVACY.md`.
-- [ ] Monitored support email or support URL.
-- [ ] An explicit repository license if the source will be public.
+- [x] Public privacy policy: https://kebinbin.github.io/skeleton-chrome-extension/privacy.html
+- [x] Support URL: https://github.com/kebinbin/skeleton-chrome-extension/issues
+- [x] MIT repository license.
 
 Use only screenshots and sites you own or have permission to publish. Avoid customer data, private source code, browser profile details, or third-party trademarks as the focal point.
 

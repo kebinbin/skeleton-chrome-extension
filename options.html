@@ -188,13 +188,17 @@
 
               <div class="customization-panel" id="outlineCustomization">
 
-                <label class="color-field" for="outlineColor">
+                <label class="color-field" for="outlineColor" id="outlineColorField">
                   <span>Color</span>
                   <span>
                     <input type="color" id="outlineColor" name="outlineColor" />
                     <output id="outlineColorValue" for="outlineColor"></output>
                   </span>
                 </label>
+
+                <small id="automaticOutlineColorHelp" hidden>
+                  Color follows each element's foreground for automatic contrast.
+                </small>
 
                 <div class="range-field">
                   <label for="outlineWidth">

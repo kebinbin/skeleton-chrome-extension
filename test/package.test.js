@@ -58,6 +58,7 @@ test("settings expose the background, outline, text, and save controls", () => {
   assert.match(optionsHtml, /id="outlineColor"/);
   assert.match(optionsHtml, /id="outlineWidth"/);
   assert.match(optionsHtml, /id="outlineStyle"/);
+  assert.match(optionsHtml, /id="automaticOutlineColorHelp"/);
   assert.match(optionsHtml, /id="customTextColor"/);
   assert.match(optionsHtml, /id="overflowDetection"/);
   assert.match(optionsHtml, /id="elementInspector"/);
@@ -106,6 +107,7 @@ test("live preview reconnects and retries after a port disconnect", () => {
 test("settings delegate draft and mode ownership to the state controller", () => {
   assert.match(optionsScript, /new SettingsState\(DEFAULT_CONFIG\)/);
   assert.match(optionsScript, /settingsState\.switchMode\(nextMode\)/);
+  assert.match(optionsScript, /sendPreviewCommand\("status"\)/);
   assert.match(optionsScript, /settingsState\.markPreviewed\(\)/);
   assert.doesNotMatch(optionsScript, /fullModeDraft|currentMode/);
 });

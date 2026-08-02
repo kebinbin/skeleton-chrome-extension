@@ -14,7 +14,7 @@ import {
   UnsupportedConfigVersionError,
 } from "../shared/config.js";
 
-test("the reference-derived retro palette provides a distinct cycle", () => {
+test("the default palette provides a distinct cycle", () => {
   assert.equal(PALETTE.length, 6);
   assert.equal(new Set(PALETTE).size, PALETTE.length);
   assert.ok(PALETTE.includes("#FFE7B3"));
@@ -218,6 +218,16 @@ test("opacity and configurable outlines are emitted exactly", () => {
 
   assert.match(css, /background-color: #FFE7B380 !important/);
   assert.match(css, /outline: 4px solid #ABCDEF !important/);
+});
+
+test("outline-only mode follows each element's foreground color", () => {
+  const config = presetConfigForMode("outline");
+  const css = buildStyleInjections(config)
+    .map((injection) => injection.css)
+    .join("\n");
+
+  assert.match(css, /outline: 1px dashed currentColor !important/);
+  assert.doesNotMatch(css, /outline: 1px dashed #FFFFFF/);
 });
 
 test("unversioned pre-release settings reset to version-one defaults", () => {

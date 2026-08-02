@@ -98,11 +98,13 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
   const inserted = [];
   const removed = [];
   const styleOperations = [];
+  const appliedStyleCounts = new Map();
   const executed = [];
   const badges = [];
   const sidePanels = [];
   const menuItems = [];
   let rejectInjection = false;
+  let rejectRemovalCount = 0;
   const originalWarn = console.warn;
   console.warn = () => undefined;
 
@@ -137,10 +139,23 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
         if (rejectInjection) {
           throw new Error("Cannot access this page");
         }
+        const key = `${injection.target.tabId}\u0000${injection.origin}\u0000${injection.css}`;
+        appliedStyleCounts.set(key, (appliedStyleCounts.get(key) ?? 0) + 1);
         inserted.push(structuredClone(injection));
         styleOperations.push({ type: "insert", css: injection.css });
       },
       async removeCSS(injection) {
+        if (rejectRemovalCount > 0) {
+          rejectRemovalCount -= 1;
+          throw new Error("Simulated removal failure");
+        }
+        const key = `${injection.target.tabId}\u0000${injection.origin}\u0000${injection.css}`;
+        const count = appliedStyleCounts.get(key) ?? 0;
+        if (count <= 1) {
+          appliedStyleCounts.delete(key);
+        } else {
+          appliedStyleCounts.set(key, count - 1);
+        }
         removed.push(structuredClone(injection));
         styleOperations.push({ type: "remove", css: injection.css });
       },
@@ -173,6 +188,10 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
   };
 
   await import(`../background.js?test=${Date.now()}`);
+  const appliedStyleCount = (tabId) =>
+    [...appliedStyleCounts.entries()]
+      .filter(([key]) => key.startsWith(`${tabId}\u0000`))
+      .reduce((total, [, count]) => total + count, 0);
   await waitFor(
     () => session.data["activeTab:99"] === undefined,
     "stale session state was not cleaned up at worker startup",
@@ -219,6 +238,9 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
 
   const firstPreviewPort = previewPort();
   runtimeConnected.dispatch(firstPreviewPort);
+  const initialStatus = await sendPreviewCommand(firstPreviewPort, "status");
+  assert.equal(initialStatus.enabled, true);
+  assert.equal(initialStatus.mode, "full");
   let previewResponse = await sendPreviewCommand(
     firstPreviewPort,
     "preview",
@@ -277,6 +299,9 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
   assert.equal(previewResponse.previewed, true);
   assert.equal(previewResponse.mode, "inspector");
   assert.equal(session.data["activeTab:17"].mode, "inspector");
+  const inspectorStatus = await sendPreviewCommand(firstPreviewPort, "status");
+  assert.equal(inspectorStatus.enabled, true);
+  assert.equal(inspectorStatus.mode, "inspector");
 
   previewResponse = await sendPreviewCommand(firstPreviewPort, "preview", {
     config: {
@@ -333,6 +358,21 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
     "closing settings did not discard its unsaved preview",
   );
 
+  // Model repeated Chrome registrations of the same generated stylesheet.
+  // Cleanup must preserve and remove every registration, not collapse them by
+  // CSS text or rely on a fixed number of removal passes.
+  const repeatedInjection = session.data["activeTab:17"].injections[0];
+  for (let registration = 0; registration < 5; registration += 1) {
+    await chrome.scripting.insertCSS({
+      target: { tabId: 17 },
+      css: repeatedInjection.css,
+      origin: repeatedInjection.origin,
+    });
+    session.data["activeTab:17"].injectionHistory.push(
+      structuredClone(repeatedInjection),
+    );
+  }
+
   const stateBeforeDisable = structuredClone(session.data["activeTab:17"]);
   const removalsBeforeDisable = removed.length;
   actionClicked.dispatch({ id: 17 });
@@ -341,22 +381,22 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
     "toolbar did not enter its disabled state",
   );
 
-  assert.equal(
-    removed.length,
-    removalsBeforeDisable + stateBeforeDisable.injections.length,
-  );
-  assert.deepEqual(
-    removed.slice(-stateBeforeDisable.injections.length),
-    stateBeforeDisable.injections.map(({ css, origin }) => ({
-      target: { tabId: 17 },
-      css,
-      origin,
-    })),
+  assert.ok(
+    removed.length >=
+      removalsBeforeDisable + stateBeforeDisable.injectionHistory.length,
+    "toolbar did not attempt to remove every stylesheet used by prior modes",
   );
   assert.equal(session.data["activeTab:17"], undefined);
-
+  assert.equal(
+    appliedStyleCount(17),
+    0,
+    "toolbar cleanup left an older mode stylesheet applied",
+  );
   const secondPreviewPort = previewPort();
   runtimeConnected.dispatch(secondPreviewPort);
+  const disabledStatus = await sendPreviewCommand(secondPreviewPort, "status");
+  assert.equal(disabledStatus.enabled, false);
+  assert.equal(disabledStatus.mode, null);
   const insertionsWhileDisabled = inserted.length;
   previewResponse = await sendPreviewCommand(
     secondPreviewPort,
@@ -446,7 +486,6 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
     "tab activation did not restore the saved mode badge",
   );
 
-  contextMenuClicked.dispatch({ menuItemId: "quick-mode-full" }, { id: 17 });
   contextMenuClicked.dispatch(
     { menuItemId: "quick-mode-inspector" },
     { id: 17 },
@@ -459,6 +498,44 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
     badges.some(({ tabId, text }) => tabId === 17 && text === "IN"),
   );
 
+  actionClicked.dispatch({ id: 17 });
+  await waitFor(
+    () => session.data["activeTab:17"] === undefined,
+    "toolbar did not disable the hover inspector",
+  );
+  assert.equal(
+    session.data["lastMode:17"],
+    "inspector",
+    "disabling did not remember the last active mode",
+  );
+
+  actionClicked.dispatch({ id: 17 });
+  await waitFor(
+    () =>
+      session.data["activeTab:17"]?.mode === "inspector" &&
+      session.data["activeTab:17"]?.elementInspector === true,
+    "toolbar did not resume the last active hover-inspector mode",
+  );
+
+  const insertionsBeforeQuickFull = inserted.length;
+  contextMenuClicked.dispatch({ menuItemId: "quick-mode-full" }, { id: 17 });
+  await waitFor(
+    () =>
+      session.data["activeTab:17"]?.mode === "full" &&
+      session.data["activeTab:17"]?.elementInspector === false &&
+      inserted.length > insertionsBeforeQuickFull,
+    "full context-menu mode did not replace the hover inspector",
+  );
+  assert.equal(badges.at(-1).text, "ON");
+
+  contextMenuClicked.dispatch(
+    { menuItemId: "quick-mode-inspector" },
+    { id: 17 },
+  );
+  await waitFor(
+    () => session.data["activeTab:17"]?.mode === "inspector",
+    "inspector context-menu mode was not reapplied",
+  );
   commandTriggered.dispatch("cycle-visualization-mode");
   await waitFor(
     () => session.data["activeTab:17"]?.mode === "full",
@@ -466,6 +543,43 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
   );
   assert.ok(
     badges.some(({ tabId, text }) => tabId === 17 && text === "ON"),
+  );
+
+  actionClicked.dispatch({ id: 17 });
+  await waitFor(
+    () => session.data["activeTab:17"] === undefined,
+    "toolbar did not remove the full mode selected after the inspector",
+  );
+  assert.equal(
+    appliedStyleCount(17),
+    0,
+    "disabling Full after Inspector exposed a stale Outline stylesheet",
+  );
+
+  actionClicked.dispatch({ id: 17 });
+  await waitFor(
+    () => session.data["activeTab:17"]?.mode === "full",
+    "toolbar did not re-enable the visualization after quick-mode cleanup",
+  );
+
+  rejectRemovalCount = 1;
+  actionClicked.dispatch({ id: 17 });
+  await waitFor(
+    () =>
+      session.data["activeTab:17"]?.injections.length > 0 &&
+      badges.at(-1)?.text === "!",
+    "failed cleanup was not retained for a retry",
+  );
+  actionClicked.dispatch({ id: 17 });
+  await waitFor(
+    () => session.data["activeTab:17"] === undefined,
+    "toolbar did not retry and finish a previously failed cleanup",
+  );
+  assert.equal(appliedStyleCount(17), 0);
+  actionClicked.dispatch({ id: 17 });
+  await waitFor(
+    () => session.data["activeTab:17"]?.mode === "full",
+    "toolbar did not re-enable after a cleanup retry",
   );
 
   const badgeCountBeforeStorageFailure = badges.length;
@@ -482,9 +596,13 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
   assert.equal(badges.at(-1).text, "ON");
 
   rejectInjection = true;
+  const badgeCountBeforeRejectedReload = badges.length;
   tabUpdated.dispatch(17, { status: "complete" });
   await waitFor(
-    () => badges.some(({ tabId, text }) => tabId === 17 && text === "!"),
+    () =>
+      badges.length > badgeCountBeforeRejectedReload &&
+      badges.at(-1)?.tabId === 17 &&
+      badges.at(-1)?.text === "!",
     "failed injection did not display an error state",
   );
   assert.equal(session.data["activeTab:17"], undefined);
@@ -492,6 +610,7 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
   tabRemoved.dispatch(17);
   await delay(0);
   assert.equal(session.data["activeTab:17"], undefined);
+  assert.equal(session.data["lastMode:17"], undefined);
 
   console.warn = originalWarn;
   delete globalThis.chrome;

@@ -10,6 +10,7 @@ import {
 } from "./shared/config.js";
 
 const SESSION_PREFIX = "activeTab:";
+const LAST_MODE_PREFIX = "lastMode:";
 const PREVIEW_PORT_NAME = "settings-preview";
 const OPEN_SETTINGS_MENU_ID = "open-settings-side-panel";
 const QUICK_MODE_MENU_ID = "quick-visualization-mode";
@@ -46,6 +47,25 @@ let previewConnectionCounter = 0;
 
 function sessionKey(tabId) {
   return `${SESSION_PREFIX}${tabId}`;
+}
+
+function lastModeKey(tabId) {
+  return `${LAST_MODE_PREFIX}${tabId}`;
+}
+
+async function getLastMode(tabId) {
+  const key = lastModeKey(tabId);
+  const result = await chrome.storage.session.get(key);
+  return QUICK_MODES.includes(result[key]) ? result[key] : null;
+}
+
+async function setLastMode(tabId, mode) {
+  if (!QUICK_MODES.includes(mode)) return;
+  await chrome.storage.session.set({ [lastModeKey(tabId)]: mode });
+}
+
+async function clearLastMode(tabId) {
+  await chrome.storage.session.remove(lastModeKey(tabId));
 }
 
 async function getConfig() {
@@ -97,8 +117,14 @@ async function getTabState(tabId) {
     return null;
   }
 
+  const injections = state.injections.filter(isStoredInjection);
+  const storedHistory = Array.isArray(state.injectionHistory)
+    ? state.injectionHistory.filter(isStoredInjection)
+    : [];
   return {
-    injections: state.injections.filter(isStoredInjection),
+    injections,
+    injectionHistory:
+      storedHistory.length > 0 ? storedHistory : [...injections],
     overflowDetection: state.overflowDetection === true,
     elementInspector: state.elementInspector === true,
     mode: QUICK_MODES.includes(state.mode) ? state.mode : "full",
@@ -114,10 +140,12 @@ async function setTabState(
   elementInspector,
   mode,
   previewOwner = null,
+  injectionHistory = injections,
 ) {
   await chrome.storage.session.set({
     [sessionKey(tabId)]: {
       injections,
+      injectionHistory: [...injectionHistory],
       overflowDetection,
       elementInspector,
       mode,
@@ -156,16 +184,50 @@ async function showError(tabId, message) {
 }
 
 async function removeInjections(tabId, injections) {
-  const removals = injections.map(({ css, origin }) =>
-    chrome.scripting
-      .removeCSS({ target: { tabId }, css, origin })
-      .catch(() => undefined),
-  );
-  await Promise.all(removals);
+  const failed = [];
+  // Preserve multiplicity and ordering: every entry represents one
+  // successful insertCSS call in the current document lifecycle.
+  for (const injection of injections) {
+    const { css, origin } = injection;
+    try {
+      await chrome.scripting.removeCSS({
+        target: { tabId },
+        css,
+        origin,
+      });
+    } catch (error) {
+      failed.push(injection);
+      console.warn("Skeleton Layout could not remove injected CSS.", error);
+    }
+  }
+  return failed;
 }
 
 function injectionKey({ css, origin }) {
   return `${origin}\u0000${css}`;
+}
+
+function partitionInjectionHistory(history, activeInjections) {
+  const activeCounts = new Map();
+  for (const injection of activeInjections) {
+    const key = injectionKey(injection);
+    activeCounts.set(key, (activeCounts.get(key) ?? 0) + 1);
+  }
+
+  const active = [];
+  const stale = [];
+  for (const injection of history) {
+    const key = injectionKey(injection);
+    const remaining = activeCounts.get(key) ?? 0;
+    if (remaining > 0) {
+      active.push(injection);
+      activeCounts.set(key, remaining - 1);
+    } else {
+      stale.push(injection);
+    }
+  }
+
+  return { active, stale };
 }
 
 async function enableOverflowDetection(tabId) {
@@ -176,15 +238,19 @@ async function enableOverflowDetection(tabId) {
 }
 
 async function disableOverflowDetection(tabId) {
-  await chrome.scripting
-    .executeScript({
+  try {
+    await chrome.scripting.executeScript({
       target: { tabId },
       func: () => {
         globalThis.__skeletonLayoutOverflowOverlay?.destroy();
         delete globalThis.__skeletonLayoutOverflowLogic;
       },
-    })
-    .catch(() => undefined);
+    });
+    return true;
+  } catch (error) {
+    console.warn("Skeleton Layout could not remove overflow diagnostics.", error);
+    return false;
+  }
 }
 
 async function enableElementInspector(tabId) {
@@ -198,30 +264,61 @@ async function enableElementInspector(tabId) {
 }
 
 async function disableElementInspector(tabId) {
-  await chrome.scripting
-    .executeScript({
+  try {
+    await chrome.scripting.executeScript({
       target: { tabId },
       func: () => {
         globalThis.__skeletonLayoutElementInspector?.destroy();
         delete globalThis.__skeletonLayoutElementInspectorLogic;
       },
-    })
-    .catch(() => undefined);
+    });
+    return true;
+  } catch (error) {
+    console.warn("Skeleton Layout could not remove the element inspector.", error);
+    return false;
+  }
 }
 
 async function disableForTab(tabId) {
   const state = await getTabState(tabId);
-  if (state) {
-    await removeInjections(tabId, state.injections);
-    if (state.overflowDetection) {
-      await disableOverflowDetection(tabId);
-    }
-    if (state.elementInspector) {
-      await disableElementInspector(tabId);
-    }
+  if (!state) {
+    await updateAction(tabId, null);
+    return true;
   }
+
+  const [failedInjections, overflowRemoved, inspectorRemoved] =
+    await Promise.all([
+      // Calling removeCSS for a stylesheet that no longer exists is a no-op.
+      // The history contains one entry for every insertCSS registration, so
+      // cleanup does not rely on a fixed number of removal attempts.
+      removeInjections(tabId, state.injectionHistory),
+      disableOverflowDetection(tabId),
+      disableElementInspector(tabId),
+    ]);
+  const overflowRemaining = state.overflowDetection && !overflowRemoved;
+  const inspectorRemaining = state.elementInspector && !inspectorRemoved;
+
+  if (
+    failedInjections.length > 0 ||
+    overflowRemaining ||
+    inspectorRemaining
+  ) {
+    await setTabState(
+      tabId,
+      failedInjections,
+      overflowRemaining,
+      inspectorRemaining,
+      state.mode,
+      state.previewOwner,
+      failedInjections,
+    );
+    await showError(tabId, "cleanup was incomplete; click again to retry");
+    return false;
+  }
+
   await clearTabState(tabId);
   await updateAction(tabId, null);
+  return true;
 }
 
 async function enableForTab(
@@ -240,29 +337,18 @@ async function enableForTab(
   const overflowDetection = normalizedConfig.style.overflowDetection;
   const elementInspector = normalizedConfig.style.elementInspector;
   if (injections.length === 0 && !overflowDetection && !elementInspector) {
-    if (previousState && !documentChanged) {
-      await removeInjections(tabId, previousState.injections);
-      if (previousState.overflowDetection) {
-        await disableOverflowDetection(tabId);
-      }
-      if (previousState.elementInspector) {
-        await disableElementInspector(tabId);
-      }
-    }
-    await clearTabState(tabId);
+    await disableForTab(tabId);
     await showError(tabId, "Select at least one visualization style");
     return;
   }
 
   const previousInjections =
     previousState && !documentChanged ? previousState.injections : [];
+  const previousHistory =
+    previousState && !documentChanged ? previousState.injectionHistory : [];
   const previousKeys = new Set(previousInjections.map(injectionKey));
-  const nextKeys = new Set(injections.map(injectionKey));
   const additions = injections.filter(
     (injection) => !previousKeys.has(injectionKey(injection)),
-  );
-  const removals = previousInjections.filter(
-    (injection) => !nextKeys.has(injectionKey(injection)),
   );
   const inserted = [];
   try {
@@ -277,53 +363,75 @@ async function enableForTab(
       inserted.push(injection);
     }
 
-    if (
-      overflowDetection &&
-      (documentChanged || !previousState?.overflowDetection)
-    ) {
+    if (overflowDetection) {
       await enableOverflowDetection(tabId);
     }
 
-    if (
-      elementInspector &&
-      (documentChanged || !previousState?.elementInspector)
-    ) {
+    if (elementInspector) {
       await enableElementInspector(tabId);
     }
 
-    // Persist the new working set before cleaning up the previous one. If
-    // session storage fails, the prior visualization is still intact and the
-    // additions below can be rolled back without leaving the page unstyled.
+    const overflowRemoved =
+      overflowDetection || documentChanged
+        ? true
+        : await disableOverflowDetection(tabId);
+    const inspectorRemoved =
+      elementInspector || documentChanged
+        ? true
+        : await disableElementInspector(tabId);
+    const overflowRemaining =
+      overflowDetection ||
+      (previousState?.overflowDetection === true && !overflowRemoved);
+    const inspectorRemaining =
+      elementInspector ||
+      (previousState?.elementInspector === true && !inspectorRemoved);
+
+    const provisionalHistory = [
+      ...previousHistory,
+      ...inserted,
+    ];
+    const historyPartition = partitionInjectionHistory(
+      provisionalHistory,
+      injections,
+    );
+
+    // Persist the new registrations before removing stale styles. If the
+    // service worker is interrupted, the toolbar still has an exact cleanup
+    // ledger for everything that may remain in the document.
     await setTabState(
       tabId,
       injections,
-      overflowDetection,
-      elementInspector,
+      overflowRemaining,
+      inspectorRemaining,
       normalizedMode,
       previewOwner,
+      provisionalHistory,
     );
 
-    await removeInjections(tabId, removals);
-    if (
-      previousState?.overflowDetection &&
-      !overflowDetection &&
-      !documentChanged
-    ) {
-      await disableOverflowDetection(tabId);
-    }
-    if (
-      previousState?.elementInspector &&
-      !elementInspector &&
-      !documentChanged
-    ) {
-      await disableElementInspector(tabId);
-    }
+    const failedStaleRemovals = await removeInjections(
+      tabId,
+      historyPartition.stale,
+    );
+    const injectionHistory = [
+      ...historyPartition.active,
+      ...failedStaleRemovals,
+    ];
+    await setTabState(
+      tabId,
+      injections,
+      overflowRemaining,
+      inspectorRemaining,
+      normalizedMode,
+      previewOwner,
+      injectionHistory,
+    );
+    await setLastMode(tabId, normalizedMode);
 
     await updateAction(tabId, MODE_BADGES[normalizedMode]).catch((error) => {
       console.warn("Skeleton Layout could not update its toolbar badge.", error);
     });
   } catch (error) {
-    await removeInjections(tabId, inserted);
+    const failedInsertedRemovals = await removeInjections(tabId, inserted);
     if (overflowDetection && !previousState?.overflowDetection) {
       await disableOverflowDetection(tabId);
     }
@@ -331,6 +439,18 @@ async function enableForTab(
       await disableElementInspector(tabId);
     }
     if (previousState && !documentChanged) {
+      await setTabState(
+        tabId,
+        previousState.injections,
+        previousState.overflowDetection,
+        previousState.elementInspector,
+        previousState.mode,
+        previousState.previewOwner,
+        [
+          ...previousState.injectionHistory,
+          ...failedInsertedRemovals,
+        ],
+      );
       await updateAction(tabId, MODE_BADGES[previousState.mode]);
     } else {
       await clearTabState(tabId);
@@ -449,7 +569,7 @@ chrome.action.onClicked.addListener((tab) => {
     if (state) {
       await disableForTab(tab.id);
     } else {
-      await enableForTab(tab.id);
+      await enableForTab(tab.id, null, await getLastMode(tab.id));
     }
   }).catch((error) => {
     console.error("Skeleton Layout toggle failed.", error);
@@ -487,6 +607,8 @@ chrome.runtime.onConnect.addListener((port) => {
             state.overflowDetection,
             state.elementInspector,
             state.mode,
+            null,
+            state.injectionHistory,
           );
         }),
       ),
@@ -514,6 +636,23 @@ chrome.runtime.onConnect.addListener((port) => {
   };
 
   const handleMessage = async (message) => {
+    if (message?.type === "status") {
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+      if (!Number.isInteger(tab?.id)) {
+        return { enabled: false, mode: null, reason: "unavailable" };
+      }
+
+      return withTabLock(tab.id, async () => {
+        const state = await getTabState(tab.id);
+        return {
+          enabled: state !== null,
+          mode: state?.mode ?? null,
+        };
+      });
+    }
     if (message?.type === "commit") {
       await clearPreviewOwnership();
       return { committed: true };
@@ -617,6 +756,13 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
 
     const inserted = [];
     try {
+      // A complete event normally means the old document and its injected
+      // CSS are gone. Removing the ledger first also handles duplicate or
+      // same-document complete events without stacking another registration.
+      const failedPreviousRemovals = await removeInjections(
+        tabId,
+        state.injectionHistory,
+      );
       for (const injection of state.injections) {
         await chrome.scripting.insertCSS({
           target: { tabId },
@@ -634,6 +780,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
         state.elementInspector,
         state.mode,
         state.previewOwner,
+        [...failedPreviousRemovals, ...inserted],
       );
       await updateAction(tabId, MODE_BADGES[state.mode]);
     } catch (error) {
@@ -658,7 +805,9 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   tabLocks.delete(tabId);
-  clearTabState(tabId).catch(() => undefined);
+  Promise.all([clearTabState(tabId), clearLastMode(tabId)]).catch(
+    () => undefined,
+  );
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {

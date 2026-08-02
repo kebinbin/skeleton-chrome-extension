@@ -30,6 +30,10 @@ const backgroundOpacityValue = document.querySelector(
 const backgroundToggles = document.querySelector("#backgroundToggles");
 const outlineCustomization = document.querySelector("#outlineCustomization");
 const outlineOverrideRow = document.querySelector("#outlineOverrideRow");
+const outlineColorField = document.querySelector("#outlineColorField");
+const automaticOutlineColorHelp = document.querySelector(
+  "#automaticOutlineColorHelp",
+);
 const outlineColorValue = document.querySelector("#outlineColorValue");
 const outlineWidthValue = document.querySelector("#outlineWidthValue");
 const textColorCustomization = document.querySelector(
@@ -260,11 +264,14 @@ function updateDependencies() {
   setControlState(fields.overrideBgColor, fullMode && hasBackground);
   backgroundToggles.hidden = !hasBackground;
   const hasOutline = fields.outlineStyle.value !== "none";
+  const automaticOutlineColor = outlineMode && hasOutline;
   setControlState(fields.outlineStyle, fullMode || outlineMode);
-  setControlState(fields.outlineColor, hasOutline);
+  setControlState(fields.outlineColor, hasOutline && !automaticOutlineColor);
   setControlState(fields.outlineWidth, hasOutline);
   setControlState(fields.overrideBorder, hasOutline);
   outlineCustomization.hidden = !hasOutline;
+  outlineColorField.hidden = automaticOutlineColor;
+  automaticOutlineColorHelp.hidden = !automaticOutlineColor;
   outlineOverrideRow.hidden = !hasOutline;
   setControlState(fields.textColor, fullMode);
   setControlState(fields.customTextColor, fullMode && fields.textColor.value === "custom");
@@ -328,7 +335,17 @@ function schedulePreview() {
 async function restoreSettings() {
   try {
     const { config } = await chrome.storage.sync.get("config");
-    setFormConfig(settingsState.loadSaved(loadStoredConfig(config)));
+    let displayedConfig = settingsState.loadSaved(loadStoredConfig(config));
+    try {
+      const activeStatus = await sendPreviewCommand("status");
+      if (activeStatus?.enabled) {
+        displayedConfig = settingsState.switchMode(activeStatus.mode);
+      }
+    } catch (error) {
+      // Saved settings remain usable if the active tab cannot be inspected.
+      console.warn("Skeleton Layout could not read the active tab mode.", error);
+    }
+    setFormConfig(displayedConfig);
     setUnsavedChanges(false);
   } catch (error) {
     setFormConfig(settingsState.loadSaved(DEFAULT_CONFIG));

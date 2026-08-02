@@ -385,9 +385,16 @@ function borderRules(style, important) {
   }
 
   const priority = important ? " !important" : "";
+  // Outline-only mode preserves the page's colors, so reuse each element's
+  // computed foreground color instead of forcing one global outline color.
+  // Page foreground colors are normally chosen to contrast with their local
+  // surface, and currentColor keeps this automatic without scanning or
+  // mutating the DOM.
+  const outlineColor =
+    style.mode === "outline" ? "currentColor" : style.outlineColor;
 
   return [
-    `:where(${visualizedElement()}) { outline: ${style.outlineWidth}px ${style.outlineStyle} ${style.outlineColor}${priority}; outline-offset: -${style.outlineWidth}px${priority}; }`,
+    `:where(${visualizedElement()}) { outline: ${style.outlineWidth}px ${style.outlineStyle} ${outlineColor}${priority}; outline-offset: -${style.outlineWidth}px${priority}; }`,
   ];
 }
 

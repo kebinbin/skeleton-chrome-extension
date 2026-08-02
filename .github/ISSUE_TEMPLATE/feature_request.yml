@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest a focused improvement to layout visualization.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Development problem
+      description: What layout task is difficult today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed improvement
+      description: Describe how the feature would fit the current visualization workflow.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Current workaround
+      description: How do you handle this task today?
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy and scope
+      options:
+        - label: This proposal can work locally without collecting or transmitting page content.

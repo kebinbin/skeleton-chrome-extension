@@ -51,7 +51,8 @@ function Landing() {
       <p className="eyebrow">Chrome extension for frontend development</p>
       <h1>See every layer.<br />Write better frontend.</h1>
       <p className="lead">Reveal the structure of the page while you code. No refresh, no DevTools detour, and no hovering through one element at a time.</p>
-      <div className="actions"><a className="button" href={repo}>View source on GitHub</a><a href={`${base}docs.html`}>Read the documentation</a></div>
+      <div className="actions"><a className="button" href={`${base}docs.html#installation`}>Install locally</a><a href={repo}>View source on GitHub</a></div>
+      <p className="trust-line"><span>No tracking</span><span>Temporary tab access</span><span>Open source</span></p>
       <div className="workbench">
         <div className="source">
           <div className="source-bar"><span>Hero.astro</span><span>Current portfolio</span></div>
@@ -60,6 +61,11 @@ function Landing() {
         <Shot file="mode-full.png" alt="Current Full visualization coloring the page layout by nesting depth" />
       </div>
       <p className="caption">Current portfolio source and current-version Skeleton Layout capture. The structure responds as the DOM changes.</p>
+    </section>
+
+    <section className="section origin" id="story">
+      <div><p className="eyebrow">Why Skeleton exists</p><h2>It started with temporary background colors.</h2></div>
+      <div className="origin-copy"><p className="origin-question">Have you ever added random colors or borders to HTML elements just to see what the layout is actually doing?</p><p>That familiar debugging habit was the starting point for Skeleton Layout. It turns the manual workaround into a reusable visualization you can toggle while coding—without repeatedly editing temporary CSS and cleaning it up afterward.</p></div>
     </section>
 
     <section className="section" id="features">
@@ -88,14 +94,14 @@ function Landing() {
       <Shot file="settings.png" alt="Current Skeleton Layout visualization settings" className="settings-shot" />
     </section>
 
-    <section className="closing"><p className="eyebrow">Built in the open</p><h2>Make the invisible structure visible.</h2><p>Load it locally, try it on your current project, and inspect the source.</p><a className="button" href={repo}>View on GitHub</a></section>
+    <section className="closing"><p className="eyebrow">Built in the open</p><h2>Make the invisible structure visible.</h2><p>Load it locally, try it on your current project, and inspect the source.</p><div className="actions centered"><a className="button" href={`${base}docs.html#installation`}>Install locally</a><a href={repo}>View source on GitHub</a></div></section>
   </main><Footer /></>;
 }
 
 const sections = [
   ["modes", "Modes", "Mode presets change the visualization without overwriting your saved Full visualization preferences.", [
     ["Full visualization", "Uses your background, outline, and text treatments across the page."],
-    ["Outline only", "Keeps page colors and adds the configured diagnostic outline."],
+    ["Outline only", "Keeps page colors and adds an outline that follows each element's contrasting foreground color."],
     ["Hover inspector", "Keeps page styling and enables the isolated element-details overlay."],
   ]],
   ["background", "Background", "Choose whether Skeleton Layout preserves page backgrounds or replaces them with structural colors.", [
@@ -107,7 +113,7 @@ const sections = [
     ["Override page backgrounds", "Uses the user cascade origin so visualization colors win over page styles."],
   ]],
   ["outline", "Outline", "Add a diagnostic boundary without changing layout dimensions.", [
-    ["Style", "Choose dashed, solid, or no outline. Dashed is the default."], ["Color", "Pick the outline color; white is the default."],
+    ["Style", "Choose dashed, solid, or no outline. Dashed is the default."], ["Color", "Pick the Full visualization outline color. Outline only follows each element's foreground color automatically."],
     ["Thickness", "Choose a restrained width from 1 to 4 pixels."], ["Override page outlines", "Keeps diagnostic outlines above page outline rules."],
   ]],
   ["text", "Text", "Keep text readable while structural backgrounds are active.", [
@@ -122,13 +128,15 @@ const sections = [
 
 function Docs() {
   return <><Header /><main className="docs">
-    <aside><b>Documentation</b>{sections.map(([id, title]) => <a key={id} href={`#${id}`}>{title}</a>)}<a href="#shortcuts">Shortcuts</a><a href="#permissions">Permissions</a><a href="#limits">Limitations</a></aside>
+    <aside><b>Documentation</b><a href="#installation">Installation</a>{sections.map(([id, title]) => <a key={id} href={`#${id}`}>{title}</a>)}<a href="#shortcuts">Shortcuts</a><a href="#permissions">Permissions</a><a href="#compatibility">Compatibility</a><a href="#limits">Limitations</a></aside>
     <div className="docs-main">
       <header><p className="eyebrow">Skeleton Layout documentation</p><h1>Every setting, explained.</h1><p className="lead">Configure the overlay for whole-page structure, focused outlines, or element-level inspection.</p></header>
+      <section className="doc-section installation" id="installation"><h2>Install locally</h2><p>Until the Chrome Web Store release is available, run the current version directly from this repository.</p><ol><li>Download or clone the <a href={repo}>Skeleton Layout repository</a>.</li><li>Open <code>chrome://extensions</code> in Google Chrome.</li><li>Enable <strong>Developer mode</strong>.</li><li>Select <strong>Load unpacked</strong> and choose the folder containing <code>manifest.json</code>.</li><li>Pin Skeleton Layout, then click its toolbar icon on a normal webpage.</li></ol><div className="note"><strong>Updating a local installation</strong><span>Pull or download the new files, select <b>Reload</b> on <code>chrome://extensions</code>, then refresh the page you are inspecting.</span></div></section>
       <figure className="docs-settings"><Shot file="settings.png" alt="Complete current Skeleton Layout settings interface" /><figcaption>Default Full visualization configuration in the current settings interface.</figcaption></figure>
       {sections.map(([id, title, intro, items]) => <section className="doc-section" id={id} key={id}><h2>{title}</h2><p>{intro}</p><dl>{items.map(([term, def]) => <div key={term}><dt>{term}</dt><dd>{def}</dd></div>)}</dl>{id === "modes" && <div className="docs-shots"><Shot file="mode-full.png" alt="Current colored Full visualization" /><Shot file="mode-outline.png" alt="Current Outline only mode" /><Shot file="mode-inspector.png" alt="Current Hover inspector mode" /></div>}</section>)}
       <section className="doc-section" id="shortcuts"><h2>Toolbar and shortcuts</h2><p>Click the toolbar icon to toggle. Right-click it to open settings beside the page or select a Quick mode.</p><dl><div><dt>Toggle</dt><dd><kbd>Ctrl/⌘</kbd> <kbd>Shift</kbd> <kbd>L</kbd></dd></div><div><dt>Cycle modes</dt><dd><kbd>Ctrl/⌘</kbd> <kbd>Shift</kbd> <kbd>Y</kbd></dd></div><div><dt>Direct commands</dt><dd>Assign them at <code>chrome://extensions/shortcuts</code>.</dd></div></dl></section>
       <section className="doc-section" id="permissions"><h2>Permissions</h2><p>Skeleton Layout requests no persistent site access.</p><dl>{[["activeTab","Temporary access after you invoke the extension."],["scripting","Insert and remove CSS and optional diagnostics."],["contextMenus","Offer settings and modes from the toolbar icon."],["sidePanel","Keep settings beside the inspected page."],["storage","Save preferences and temporary tab state; never URLs or page content."]].map(([a,b])=><div key={a}><dt>{a}</dt><dd>{b}</dd></div>)}</dl></section>
+      <section className="doc-section" id="compatibility"><h2>Compatibility</h2><p>The main visualization works on ordinary web pages where Chrome permits temporary extension access.</p><dl><div><dt>Static and server-rendered pages</dt><dd>Supported. Existing and newly rendered elements receive generated structural styles.</dd></div><div><dt>React, Vue, Astro, and similar apps</dt><dd>Supported. DOM changes are visualized without adding classes or attributes to application elements.</dd></div><div><dt>Flexbox and Grid layouts</dt><dd>Supported. Hover inspection adds contextual container and item details.</dd></div><div><dt>Local development servers</dt><dd>Supported on normal <code>http://localhost</code> pages. File URLs require the user to enable file access for the extension.</dd></div><div><dt>Shadow DOM and iframes</dt><dd>The document itself is supported, but styling cannot cross closed shadow roots or enter cross-origin iframe documents.</dd></div><div><dt>Chrome internal pages</dt><dd>Unsupported by browser policy, including <code>chrome://</code> pages and the Chrome Web Store.</dd></div></dl></section>
       <section className="doc-section" id="limits"><h2>Limitations</h2><ul><li>Chrome-owned pages and the Chrome Web Store prohibit injection.</li><li>Cross-origin navigation revokes temporary access until invoked again.</li><li>Styles cannot cross Shadow DOM boundaries or reach cross-origin iframe contents.</li><li>Nesting deeper than 64 levels is left uncolored.</li><li>Overflow detection is experimental and contextual.</li></ul></section>
     </div>
   </main><Footer /></>;
