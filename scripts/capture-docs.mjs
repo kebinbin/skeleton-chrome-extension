@@ -16,6 +16,21 @@ const outputDirectory = resolve(
   process.argv[2] ?? "/tmp/skeleton-current-captures",
 );
 const targetUrl = process.argv[3] ?? "https://kevincastillo.io/";
+const fullVisualizationOpacity = Math.max(
+  0,
+  DEFAULT_CONFIG.style.backgroundOpacity - 10,
+);
+const captureConfig = normalizeConfig({
+  ...DEFAULT_CONFIG,
+  style: {
+    ...DEFAULT_CONFIG.style,
+    backgroundOpacity: fullVisualizationOpacity,
+  },
+  fullStyle: {
+    ...DEFAULT_CONFIG.fullStyle,
+    backgroundOpacity: fullVisualizationOpacity,
+  },
+});
 const executablePath =
   process.env.CHROME_PATH ??
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
@@ -31,7 +46,7 @@ const browser = await puppeteer.launch({
   args: [
     "--no-first-run",
     "--disable-default-apps",
-    "--window-size=1440,1000",
+    "--window-size=1440,810",
     "--force-device-scale-factor=1",
   ],
 });
@@ -60,7 +75,7 @@ async function extensionTabId(worker, page) {
 }
 
 async function applyModeToCapture(page, mode) {
-  const config = configForMode(normalizeConfig(DEFAULT_CONFIG), mode);
+  const config = configForMode(captureConfig, mode);
   const styleHandles = [];
   for (const { css } of buildStyleInjections(config)) {
     styleHandles.push(await page.addStyleTag({ content: css }));
@@ -94,7 +109,7 @@ try {
   const extensionId = new URL(workerTarget.url()).host;
 
   const page = await browser.newPage();
-  await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
+  await page.setViewport({ width: 1440, height: 810, deviceScaleFactor: 1 });
   await page.goto(targetUrl, { waitUntil: "networkidle2", timeout: 45_000 });
   await page.evaluate(() => window.scrollTo(0, 0));
   const tabId = await extensionTabId(worker, page);
@@ -105,15 +120,17 @@ try {
   let clearMode = await applyModeToCapture(page, "full");
   await new Promise((resolveDelay) => setTimeout(resolveDelay, 500));
   await page.screenshot({
-    path: resolve(outputDirectory, "mode-full.png"),
-    type: "png",
+    path: resolve(outputDirectory, "mode-full.webp"),
+    type: "webp",
+    quality: 90,
   });
   await clearMode();
   clearMode = await applyModeToCapture(page, "outline");
   await new Promise((resolveDelay) => setTimeout(resolveDelay, 300));
   await page.screenshot({
-    path: resolve(outputDirectory, "mode-outline.png"),
-    type: "png",
+    path: resolve(outputDirectory, "mode-outline.webp"),
+    type: "webp",
+    quality: 90,
   });
   await clearMode();
   clearMode = await applyModeToCapture(page, "inspector");
@@ -121,8 +138,9 @@ try {
   if (hoverTarget) await hoverTarget.hover();
   await new Promise((resolveDelay) => setTimeout(resolveDelay, 500));
   await page.screenshot({
-    path: resolve(outputDirectory, "mode-inspector.png"),
-    type: "png",
+    path: resolve(outputDirectory, "mode-inspector.webp"),
+    type: "webp",
+    quality: 90,
   });
   await clearMode();
 
@@ -131,8 +149,9 @@ try {
   await settings.goto(`chrome-extension://${extensionId}/options.html`);
   await settings.waitForSelector("#visualizationMode");
   await settings.screenshot({
-    path: resolve(outputDirectory, "settings.png"),
-    type: "png",
+    path: resolve(outputDirectory, "settings.webp"),
+    type: "webp",
+    quality: 90,
     fullPage: true,
   });
 

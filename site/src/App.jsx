@@ -1,30 +1,9 @@
 const base = import.meta.env.BASE_URL;
 const repo = "https://github.com/kebinbin/skeleton-chrome-extension";
 
-const portfolioExcerpt = `<header class="container flex min-h-[calc(100svh-7.25rem)] flex-col">
-  <div class="relative flex grow flex-col">
-    <div class="page-grid relative">
-      <p class="eyebrow col-span-3 lg:col-start-3">
-        <span>Software</span>
-        <span>Engineer</span>
-      </p>
-    </div>
-
-    <div class="relative flex grow items-center">
-      <h1 class="text-ink relative">
-        {(['1', '2', '3'] as const).map((k) => (
-          <span aria-hidden="true" class="text-display block">
-            {i18n.hero.h1[k]}
-          </span>
-        ))}
-      </h1>
-    </div>
-  </div>
-</header>`;
-
 function Header() {
   return <header className="site-header">
-    <a className="brand" href={base}><img src={`${base}assets/icon-128.png`} alt="" /><b>Skeleton Layout</b></a>
+    <a className="brand" href={base}><img src={`${base}assets/icon-128.webp`} alt="" /><b>Skeleton Layout</b></a>
     <nav aria-label="Primary navigation">
       <a href={`${base}#features`}>Features</a><a href={`${base}#modes`}>Modes</a>
       <a href={`${base}docs.html`}>Documentation</a><a href={repo}>GitHub</a>
@@ -34,7 +13,7 @@ function Header() {
 
 function Footer() {
   return <footer className="site-footer">
-    <a className="brand" href={base}><img src={`${base}assets/icon-128.png`} alt="" /><b>Skeleton Layout</b></a>
+    <a className="brand" href={base}><img src={`${base}assets/icon-128.webp`} alt="" /><b>Skeleton Layout</b></a>
     <p>Built for frontend engineers who want to see the whole layout.</p>
     <div><a href={`${base}docs.html`}>Documentation</a><a href={`${base}privacy.html`}>Privacy</a><a href={`${repo}/blob/experimentation/LICENSE`}>MIT License</a><a href={`${repo}/issues`}>Support</a></div>
     <small>© 2026 Kevin Castillo</small>
@@ -45,6 +24,10 @@ function Shot({ file, alt, className = "" }) {
   return <img className={`shot ${className}`} src={`${base}assets/${file}`} alt={alt} />;
 }
 
+function ModeShot({ file, alt }) {
+  return <figure className="mode-visual product-bezel"><Shot file={file} alt={alt} /></figure>;
+}
+
 function Landing() {
   return <><Header /><main>
     <section className="hero">
@@ -53,14 +36,10 @@ function Landing() {
       <p className="lead">Reveal the structure of the page while you code. No refresh, no DevTools detour, and no hovering through one element at a time.</p>
       <div className="actions"><a className="button" href={`${base}docs.html#installation`}>Install locally</a><a href={repo}>View source on GitHub</a></div>
       <p className="trust-line"><span>No tracking</span><span>Temporary tab access</span><span>Open source</span></p>
-      <div className="workbench">
-        <div className="source">
-          <div className="source-bar"><span>Hero.astro</span><span>Current portfolio</span></div>
-          <pre><code>{portfolioExcerpt}</code></pre><div className="source-foot">Astro · UTF-8 · Spaces: 2</div>
-        </div>
-        <Shot file="mode-full.png" alt="Current Full visualization coloring the page layout by nesting depth" />
+      <div className="hero-visual aspect-video product-bezel">
+        <Shot file="skeleton-hero.webp" alt="Current Sona.io source beside its Full visualization in Chrome" className="hero-shot" />
       </div>
-      <p className="caption">Current portfolio source and current-version Skeleton Layout capture. The structure responds as the DOM changes.</p>
+      <p className="caption">Current Sona.io case-study source and current-version Skeleton Layout capture in one 16:9 workspace.</p>
     </section>
 
     <section className="section origin" id="story">
@@ -80,9 +59,9 @@ function Landing() {
     <section className="section" id="modes">
       <div className="heading"><p className="eyebrow">Three focused modes</p><h2>Choose the amount of structure you need.</h2><p>Every image below is a fresh capture from the current extension.</p></div>
       <div className="mode-grid">
-        <article><div><h3>Full visualization</h3><p>Color the complete layout by depth and keep every boundary visible.</p></div><Shot file="mode-full.png" alt="Full visualization mode with colored layout levels" /></article>
-        <article><div><h3>Outline only</h3><p>Remove color and study the page skeleton with diagnostic outlines.</p></div><Shot file="mode-outline.png" alt="Outline only mode showing page structure without background colors" /></article>
-        <article><div><h3>Hover inspector</h3><p>Inspect dimensions, box model, layout type, overflow, and stacking.</p></div><Shot file="mode-inspector.png" alt="Hover inspector showing the element box model tooltip" /></article>
+        <article><div><h3>Full visualization</h3><p>Color the complete layout by depth and keep every boundary visible.</p></div><ModeShot file="mode-full.webp" alt="Full visualization mode with colored layout levels" /></article>
+        <article><div><h3>Outline only</h3><p>Remove color and study the page skeleton with diagnostic outlines.</p></div><ModeShot file="mode-outline.webp" alt="Outline only mode showing page structure without background colors" /></article>
+        <article><div><h3>Hover inspector</h3><p>Inspect dimensions, box model, layout type, overflow, and stacking.</p></div><ModeShot file="mode-inspector.webp" alt="Hover inspector showing the element box model tooltip" /></article>
       </div>
     </section>
 
@@ -91,7 +70,7 @@ function Landing() {
         <ul><li>Six editable base colors with lightness progression</li><li>Automatic text contrast and custom outlines</li><li>Box-model inspection and overflow diagnostics</li><li>Toolbar modes and reassignable shortcuts</li></ul>
         <a href={`${base}docs.html`}>Explore every setting</a>
       </div>
-      <Shot file="settings.png" alt="Current Skeleton Layout visualization settings" className="settings-shot" />
+      <Shot file="settings.webp" alt="Current Skeleton Layout visualization settings" className="settings-shot" />
     </section>
 
     <section className="closing"><p className="eyebrow">Built in the open</p><h2>Make the invisible structure visible.</h2><p>Load it locally, try it on your current project, and inspect the source.</p><div className="actions centered"><a className="button" href={`${base}docs.html#installation`}>Install locally</a><a href={repo}>View source on GitHub</a></div></section>
@@ -132,8 +111,8 @@ function Docs() {
     <div className="docs-main">
       <header><p className="eyebrow">Skeleton Layout documentation</p><h1>Every setting, explained.</h1><p className="lead">Configure the overlay for whole-page structure, focused outlines, or element-level inspection.</p></header>
       <section className="doc-section installation" id="installation"><h2>Install locally</h2><p>Until the Chrome Web Store release is available, run the current version directly from this repository.</p><ol><li>Download or clone the <a href={repo}>Skeleton Layout repository</a>.</li><li>Open <code>chrome://extensions</code> in Google Chrome.</li><li>Enable <strong>Developer mode</strong>.</li><li>Select <strong>Load unpacked</strong> and choose the folder containing <code>manifest.json</code>.</li><li>Pin Skeleton Layout, then click its toolbar icon on a normal webpage.</li></ol><div className="note"><strong>Updating a local installation</strong><span>Pull or download the new files, select <b>Reload</b> on <code>chrome://extensions</code>, then refresh the page you are inspecting.</span></div></section>
-      <figure className="docs-settings"><Shot file="settings.png" alt="Complete current Skeleton Layout settings interface" /><figcaption>Default Full visualization configuration in the current settings interface.</figcaption></figure>
-      {sections.map(([id, title, intro, items]) => <section className="doc-section" id={id} key={id}><h2>{title}</h2><p>{intro}</p><dl>{items.map(([term, def]) => <div key={term}><dt>{term}</dt><dd>{def}</dd></div>)}</dl>{id === "modes" && <div className="docs-shots"><Shot file="mode-full.png" alt="Current colored Full visualization" /><Shot file="mode-outline.png" alt="Current Outline only mode" /><Shot file="mode-inspector.png" alt="Current Hover inspector mode" /></div>}</section>)}
+      <figure className="docs-settings"><Shot file="settings.webp" alt="Complete current Skeleton Layout settings interface" /><figcaption>Default Full visualization configuration in the current settings interface.</figcaption></figure>
+      {sections.map(([id, title, intro, items]) => <section className="doc-section" id={id} key={id}><h2>{title}</h2><p>{intro}</p><dl>{items.map(([term, def]) => <div key={term}><dt>{term}</dt><dd>{def}</dd></div>)}</dl>{id === "modes" && <div className="docs-shots"><ModeShot file="mode-full.webp" alt="Current colored Full visualization" /><ModeShot file="mode-outline.webp" alt="Current Outline only mode" /><ModeShot file="mode-inspector.webp" alt="Current Hover inspector mode" /></div>}</section>)}
       <section className="doc-section" id="shortcuts"><h2>Toolbar and shortcuts</h2><p>Click the toolbar icon to toggle. Right-click it to open settings beside the page or select a Quick mode.</p><dl><div><dt>Toggle</dt><dd><kbd>Ctrl/⌘</kbd> <kbd>Shift</kbd> <kbd>L</kbd></dd></div><div><dt>Cycle modes</dt><dd><kbd>Ctrl/⌘</kbd> <kbd>Shift</kbd> <kbd>Y</kbd></dd></div><div><dt>Direct commands</dt><dd>Assign them at <code>chrome://extensions/shortcuts</code>.</dd></div></dl></section>
       <section className="doc-section" id="permissions"><h2>Permissions</h2><p>Skeleton Layout requests no persistent site access.</p><dl>{[["activeTab","Temporary access after you invoke the extension."],["scripting","Insert and remove CSS and optional diagnostics."],["contextMenus","Offer settings and modes from the toolbar icon."],["sidePanel","Keep settings beside the inspected page."],["storage","Save preferences and temporary tab state; never URLs or page content."]].map(([a,b])=><div key={a}><dt>{a}</dt><dd>{b}</dd></div>)}</dl></section>
       <section className="doc-section" id="compatibility"><h2>Compatibility</h2><p>The main visualization works on ordinary web pages where Chrome permits temporary extension access.</p><dl><div><dt>Static and server-rendered pages</dt><dd>Supported. Existing and newly rendered elements receive generated structural styles.</dd></div><div><dt>React, Vue, Astro, and similar apps</dt><dd>Supported. DOM changes are visualized without adding classes or attributes to application elements.</dd></div><div><dt>Flexbox and Grid layouts</dt><dd>Supported. Hover inspection adds contextual container and item details.</dd></div><div><dt>Local development servers</dt><dd>Supported on normal <code>http://localhost</code> pages. File URLs require the user to enable file access for the extension.</dd></div><div><dt>Shadow DOM and iframes</dt><dd>The document itself is supported, but styling cannot cross closed shadow roots or enter cross-origin iframe documents.</dd></div><div><dt>Chrome internal pages</dt><dd>Unsupported by browser policy, including <code>chrome://</code> pages and the Chrome Web Store.</dd></div></dl></section>

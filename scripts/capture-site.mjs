@@ -35,14 +35,27 @@ async function capture(path, viewport, output) {
     viewportWidth: document.documentElement.clientWidth,
     images: [...document.querySelectorAll("img.shot")].map((image) => ({
       src: image.getAttribute("src"),
+      isHero: image.classList.contains("hero-shot"),
+      isMode: image.closest(".mode-visual") !== null,
       naturalRatio: image.naturalWidth / image.naturalHeight,
       renderedRatio: image.getBoundingClientRect().width / image.getBoundingClientRect().height,
+      frameRatio: image.parentElement.getBoundingClientRect().width / image.parentElement.getBoundingClientRect().height,
+      objectFit: getComputedStyle(image).objectFit,
     })),
   }));
   assert.ok(measurements.documentWidth <= measurements.viewportWidth + 1, `${path} scrolls horizontally`);
   for (const image of measurements.images) {
     assert.ok(image.naturalRatio > 0, `${image.src} did not load`);
-    assert.ok(Math.abs(image.naturalRatio - image.renderedRatio) < 0.01, `${image.src} is distorted`);
+    if (image.isHero) {
+      assert.ok(Math.abs(image.renderedRatio - 16 / 9) < 0.01, `${image.src} is not in a 16:9 hero`);
+      assert.equal(image.objectFit, "contain", `${image.src} can be stretched or cropped`);
+    } else if (image.isMode) {
+      assert.ok(Math.abs(image.naturalRatio - 16 / 9) < 0.01, `${image.src} is not a 16:9 capture`);
+      assert.ok(Math.abs(image.frameRatio - 16 / 9) < 0.01, `${image.src} is not in a 16:9 bezel`);
+      assert.equal(image.objectFit, "contain", `${image.src} can be stretched or cropped`);
+    } else {
+      assert.ok(Math.abs(image.naturalRatio - image.renderedRatio) < 0.01, `${image.src} is distorted`);
+    }
   }
   await page.close();
 }
