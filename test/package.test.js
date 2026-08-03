@@ -11,6 +11,7 @@ const inspectorScript = await readFile(
   new URL("content/element-inspector.js", root),
   "utf8",
 );
+const overflowScript = await readFile(new URL("content/overflow.js", root), "utf8");
 const optionsCss = await readFile(new URL("css/options.css", root), "utf8");
 
 test("manifest uses the minimum required permissions", () => {
@@ -30,6 +31,8 @@ test("manifest uses the minimum required permissions", () => {
 test("release metadata versions stay aligned", () => {
   assert.equal(packageJson.version, manifest.version);
   assert.equal(packageJson.private, true);
+  assert.equal(packageJson.scripts.build, "npm run check && npm run package");
+  assert.equal(packageJson.scripts.package, "node scripts/release.mjs");
 });
 
 test("quick modes expose a toggle, a cycle shortcut, and direct commands", () => {
@@ -63,6 +66,7 @@ test("settings expose the background, outline, text, and save controls", () => {
   assert.match(optionsHtml, /id="overflowDetection"/);
   assert.match(optionsHtml, /id="elementInspector"/);
   assert.match(optionsHtml, /id="visualizationMode"/);
+  assert.match(optionsHtml, /id="gridVisualization"/);
   assert.equal(optionsHtml.match(/data-section-toggle/g)?.length, 5);
   assert.equal(optionsHtml.match(/aria-expanded="true"/g)?.length, 5);
   assert.match(optionsHtml, /type="submit">Save<\/button>/);
@@ -88,6 +92,18 @@ test("hover inspector supports pinned inspection and cleanup", () => {
   assert.match(inspectorScript, /removeEventListener\("click", onClick, true\)/);
   assert.match(inspectorScript, /removeEventListener\("keydown", onKeyDown, true\)/);
   assert.doesNotMatch(inspectorScript, /Copy selector|Copy size|Esc to release/);
+});
+
+test("hover inspector appears above overflow diagnostics", () => {
+  const inspectorZIndex = Number(
+    inspectorScript.match(/INSPECTOR_LAYER_Z_INDEX = (\d+)/)?.[1],
+  );
+  const overflowZIndex = Number(
+    overflowScript.match(/OVERFLOW_LAYER_Z_INDEX = (\d+)/)?.[1],
+  );
+
+  assert.equal(inspectorZIndex, 2147483647);
+  assert.ok(inspectorZIndex > overflowZIndex);
 });
 
 test("settings support narrow, dark, reduced-motion, and forced-color environments", () => {
@@ -119,6 +135,8 @@ test("all manifest entry points and icons exist", async () => {
     manifest.side_panel.default_path,
     "content/overflow-logic.js",
     "content/overflow.js",
+    "content/grid-overlay-logic.js",
+    "content/grid-overlay.js",
     "content/element-inspector-logic.js",
     "content/element-inspector.js",
     ...Object.values(manifest.icons),

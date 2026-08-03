@@ -127,6 +127,7 @@ async function getTabState(tabId) {
       storedHistory.length > 0 ? storedHistory : [...injections],
     overflowDetection: state.overflowDetection === true,
     elementInspector: state.elementInspector === true,
+    gridVisualization: state.gridVisualization === true,
     mode: QUICK_MODES.includes(state.mode) ? state.mode : "full",
     previewOwner:
       typeof state.previewOwner === "string" ? state.previewOwner : null,
@@ -138,6 +139,7 @@ async function setTabState(
   injections,
   overflowDetection,
   elementInspector,
+  gridVisualization,
   mode,
   previewOwner = null,
   injectionHistory = injections,
@@ -148,6 +150,7 @@ async function setTabState(
       injectionHistory: [...injectionHistory],
       overflowDetection,
       elementInspector,
+      gridVisualization,
       mode,
       previewOwner,
     },
@@ -230,6 +233,41 @@ function partitionInjectionHistory(history, activeInjections) {
   return { active, stale };
 }
 
+function modeUsesGridOverlay(mode) {
+  return mode === "full" || mode === "outline" || mode === "inspector";
+}
+
+async function enableGridOverlay(tabId, mode) {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    func: (activeMode) => {
+      globalThis.__skeletonLayoutGridOverlayOptions = { mode: activeMode };
+    },
+    args: [mode],
+  });
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    files: ["content/grid-overlay-logic.js", "content/grid-overlay.js"],
+  });
+}
+
+async function disableGridOverlay(tabId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => {
+        globalThis.__skeletonLayoutGridOverlay?.destroy();
+        delete globalThis.__skeletonLayoutGridOverlayLogic;
+        delete globalThis.__skeletonLayoutGridOverlayOptions;
+      },
+    });
+    return true;
+  } catch (error) {
+    console.warn("Skeleton Layout could not remove grid guides.", error);
+    return false;
+  }
+}
+
 async function enableOverflowDetection(tabId) {
   await chrome.scripting.executeScript({
     target: { tabId },
@@ -286,20 +324,29 @@ async function disableForTab(tabId) {
     return true;
   }
 
-  const [failedInjections, overflowRemoved, inspectorRemoved] =
+  const [
+    failedInjections,
+    gridOverlayRemoved,
+    overflowRemoved,
+    inspectorRemoved,
+  ] =
     await Promise.all([
       // Calling removeCSS for a stylesheet that no longer exists is a no-op.
       // The history contains one entry for every insertCSS registration, so
       // cleanup does not rely on a fixed number of removal attempts.
       removeInjections(tabId, state.injectionHistory),
+      disableGridOverlay(tabId),
       disableOverflowDetection(tabId),
       disableElementInspector(tabId),
     ]);
+  const gridOverlayRemaining =
+    state.gridVisualization && !gridOverlayRemoved;
   const overflowRemaining = state.overflowDetection && !overflowRemoved;
   const inspectorRemaining = state.elementInspector && !inspectorRemoved;
 
   if (
     failedInjections.length > 0 ||
+    gridOverlayRemaining ||
     overflowRemaining ||
     inspectorRemaining
   ) {
@@ -308,6 +355,7 @@ async function disableForTab(tabId) {
       failedInjections,
       overflowRemaining,
       inspectorRemaining,
+      gridOverlayRemaining,
       state.mode,
       state.previewOwner,
       failedInjections,
@@ -336,7 +384,15 @@ async function enableForTab(
   const injections = buildStyleInjections(normalizedConfig);
   const overflowDetection = normalizedConfig.style.overflowDetection;
   const elementInspector = normalizedConfig.style.elementInspector;
-  if (injections.length === 0 && !overflowDetection && !elementInspector) {
+  const gridVisualization =
+    normalizedConfig.style.gridVisualization &&
+    modeUsesGridOverlay(normalizedMode);
+  if (
+    injections.length === 0 &&
+    !gridVisualization &&
+    !overflowDetection &&
+    !elementInspector
+  ) {
     await disableForTab(tabId);
     await showError(tabId, "Select at least one visualization style");
     return;
@@ -363,6 +419,10 @@ async function enableForTab(
       inserted.push(injection);
     }
 
+    if (gridVisualization) {
+      await enableGridOverlay(tabId, normalizedMode);
+    }
+
     if (overflowDetection) {
       await enableOverflowDetection(tabId);
     }
@@ -379,6 +439,15 @@ async function enableForTab(
       elementInspector || documentChanged
         ? true
         : await disableElementInspector(tabId);
+    const gridOverlayRemoved =
+      gridVisualization ||
+      documentChanged ||
+      !previousState?.gridVisualization
+        ? true
+        : await disableGridOverlay(tabId);
+    if (!gridOverlayRemoved) {
+      throw new Error("Grid guide cleanup failed");
+    }
     const overflowRemaining =
       overflowDetection ||
       (previousState?.overflowDetection === true && !overflowRemoved);
@@ -403,6 +472,7 @@ async function enableForTab(
       injections,
       overflowRemaining,
       inspectorRemaining,
+      gridVisualization,
       normalizedMode,
       previewOwner,
       provisionalHistory,
@@ -421,6 +491,7 @@ async function enableForTab(
       injections,
       overflowRemaining,
       inspectorRemaining,
+      gridVisualization,
       normalizedMode,
       previewOwner,
       injectionHistory,
@@ -438,12 +509,23 @@ async function enableForTab(
     if (elementInspector && !previousState?.elementInspector) {
       await disableElementInspector(tabId);
     }
+    if (previousState?.gridVisualization) {
+      await enableGridOverlay(tabId, previousState.mode).catch((restoreError) => {
+        console.warn(
+          "Skeleton Layout could not restore its previous grid guides.",
+          restoreError,
+        );
+      });
+    } else if (gridVisualization) {
+      await disableGridOverlay(tabId);
+    }
     if (previousState && !documentChanged) {
       await setTabState(
         tabId,
         previousState.injections,
         previousState.overflowDetection,
         previousState.elementInspector,
+        previousState.gridVisualization,
         previousState.mode,
         previousState.previewOwner,
         [
@@ -606,6 +688,7 @@ chrome.runtime.onConnect.addListener((port) => {
             state.injections,
             state.overflowDetection,
             state.elementInspector,
+            state.gridVisualization,
             state.mode,
             null,
             state.injectionHistory,
@@ -773,11 +856,15 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
       }
       if (state.overflowDetection) await enableOverflowDetection(tabId);
       if (state.elementInspector) await enableElementInspector(tabId);
+      if (state.gridVisualization) {
+        await enableGridOverlay(tabId, state.mode);
+      }
       await setTabState(
         tabId,
         state.injections,
         state.overflowDetection,
         state.elementInspector,
+        state.gridVisualization,
         state.mode,
         state.previewOwner,
         [...failedPreviousRemovals, ...inserted],

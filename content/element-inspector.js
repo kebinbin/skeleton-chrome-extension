@@ -30,6 +30,7 @@
     contentOverlay,
   ];
   const tooltip = document.createElement("skeleton-layout-inspector-tooltip");
+  const INSPECTOR_LAYER_Z_INDEX = 2147483647;
 
   style.textContent = `
     :host {
@@ -38,7 +39,7 @@
       inset: 0 auto auto 0 !important;
       width: 0 !important;
       height: 0 !important;
-      z-index: 2147483646 !important;
+      z-index: ${INSPECTOR_LAYER_Z_INDEX} !important;
       pointer-events: none !important;
     }
     skeleton-layout-inspector-margin-overlay,

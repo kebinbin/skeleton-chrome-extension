@@ -68,6 +68,25 @@ test("clipped content is reported without flagging normal visible overflow", () 
   );
 });
 
+test("visible overflow from constrained grid and flex items is reported", () => {
+  assert.deepEqual(
+    classifyOverflow({
+      ...baseMetrics,
+      horizontalDelta: 18,
+      verticalDelta: 26,
+      isConstrainedLayoutItem: true,
+    }),
+    ["overflow-x", "overflow-y"],
+  );
+  assert.deepEqual(
+    classifyOverflow({
+      ...baseMetrics,
+      verticalDelta: 26,
+    }),
+    [],
+  );
+});
+
 test("only eligible elements contributing to page scrolling get page-x", () => {
   assert.deepEqual(
     classifyOverflow({

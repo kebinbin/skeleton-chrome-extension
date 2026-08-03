@@ -107,6 +107,7 @@ async function sendPreviewCommand(type, details = {}) {
 
 const fields = Object.freeze({
   mode: document.querySelector("#visualizationMode"),
+  gridVisualization: document.querySelector("#gridVisualization"),
   bgColor: document.querySelector("#bgColor"),
   backgroundOpacity: document.querySelector("#backgroundOpacity"),
   textColor: document.querySelector("#textColor"),
@@ -201,6 +202,7 @@ function renderColorCustomization() {
 function setFormConfig(candidate) {
   const { style } = normalizeConfig(candidate);
   fields.mode.value = style.mode;
+  fields.gridVisualization.checked = style.gridVisualization;
   fields.bgColor.value = style.bgColor;
   fields.backgroundOpacity.value = style.backgroundOpacity;
   fields.textColor.value = style.textColor;
@@ -227,6 +229,7 @@ function readStyleFromFields(mode = fields.mode.value) {
   return normalizeConfig({
     style: {
       mode,
+      gridVisualization: fields.gridVisualization.checked,
       bgColor: fields.bgColor.value,
       backgroundOpacity: Number(fields.backgroundOpacity.value),
       textColor: fields.textColor.value,
@@ -246,7 +249,13 @@ function readStyleFromFields(mode = fields.mode.value) {
 
 function readFormConfig() {
   const style = readStyleFromFields();
-  return normalizeConfig({ style, fullStyle: settingsState.draft.fullStyle });
+  return normalizeConfig({
+    style,
+    fullStyle: {
+      ...settingsState.draft.fullStyle,
+      gridVisualization: fields.gridVisualization.checked,
+    },
+  });
 }
 
 function setControlState(control, enabled) {
@@ -257,6 +266,7 @@ function updateDependencies() {
   const mode = fields.mode.value;
   const fullMode = mode === "full";
   const outlineMode = mode === "outline";
+  setControlState(fields.gridVisualization, fullMode || outlineMode || inspectorMode);
   const hasBackground = fields.bgColor.value !== "default";
   setControlState(fields.bgColor, fullMode);
   setControlState(fields.backgroundOpacity, fullMode && hasBackground);
@@ -276,7 +286,7 @@ function updateDependencies() {
   setControlState(fields.textColor, fullMode);
   setControlState(fields.customTextColor, fullMode && fields.textColor.value === "custom");
   setControlState(fields.elementInspector, fullMode);
-  setControlState(fields.overflowDetection, fullMode);
+  setControlState(fields.overflowDetection, fullMode || outlineMode || inspectorMode);
   textColorCustomization.hidden = fields.textColor.value !== "custom";
   renderColorCustomization();
 }

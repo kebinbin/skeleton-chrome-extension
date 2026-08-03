@@ -44,7 +44,7 @@ try {
   await page.reload();
   await page.waitForSelector("#visualizationMode");
   await page.waitForFunction(
-    () => document.querySelector("#backgroundOpacity")?.value === "67",
+    () => document.querySelector("#backgroundOpacity")?.value === "62",
   );
 
   const setRange = (selector, value) =>
@@ -62,6 +62,11 @@ try {
     input.value = "#123456";
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
+  await page.click("#gridVisualization");
+  assert.equal(
+    await page.$eval("#gridVisualization", (field) => field.checked),
+    true,
+  );
 
   await page.select("#visualizationMode", "outline");
   assert.equal(await page.$eval("#bgColor", (field) => field.value), "default");
@@ -69,10 +74,18 @@ try {
     await page.$eval("#outlineStyle", (field) => field.value),
     "dashed",
   );
+  assert.equal(
+    await page.$eval("#gridVisualization", (field) => field.checked),
+    true,
+  );
 
   await page.select("#visualizationMode", "inspector");
   assert.equal(
     await page.$eval("#elementInspector", (field) => field.checked),
+    true,
+  );
+  assert.equal(
+    await page.$eval("#gridVisualization", (field) => field.disabled),
     true,
   );
 
@@ -95,6 +108,7 @@ try {
   );
   assert.equal(saved.config.style.backgroundOpacity, 41);
   assert.equal(saved.config.style.paletteColors[0], "#123456");
+  assert.equal(saved.config.style.gridVisualization, true);
 
   await setRange("#backgroundOpacity", 29);
   await page.select("#visualizationMode", "outline");

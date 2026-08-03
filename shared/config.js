@@ -1,10 +1,10 @@
 export const PALETTE = Object.freeze([
-  "#FFE7B3",
-  "#063846",
-  "#FF7A18",
-  "#159B9B",
-  "#F4B62D",
-  "#721128",
+  "#E5D28B",
+  "#E8C450",
+  "#FF6600",
+  "#78E6E9",
+  "#050504",
+  "#63E7D8",
 ]);
 
 export const BACKGROUND_OPTIONS = Object.freeze([
@@ -21,18 +21,19 @@ export const QUICK_MODES = Object.freeze([
   "inspector",
 ]);
 
-export const MONOCHROME_COLOR = "#159B9B";
+export const MONOCHROME_COLOR = "#63E7D8";
 export const CONFIG_SCHEMA_VERSION = 1;
 
 const DEFAULT_STYLE = Object.freeze({
   mode: "full",
+  gridVisualization: true,
   bgColor: "colorful",
-  backgroundOpacity: 67,
+  backgroundOpacity: 41,
   textColor: "auto",
   customTextColor: "#FFFFFF",
   paletteColors: PALETTE,
   monochromeColor: MONOCHROME_COLOR,
-  cycleLightnessStep: -18,
+  cycleLightnessStep: -7,
   monochromeLightnessStep: -18,
   byLevel: true,
   overrideBgColor: true,
@@ -40,7 +41,7 @@ const DEFAULT_STYLE = Object.freeze({
   outlineColor: "#FFFFFF",
   outlineWidth: 1,
   overrideBorder: true,
-  overflowDetection: false,
+  overflowDetection: true,
   elementInspector: false,
 });
 
@@ -65,6 +66,7 @@ const VALID_ORIGINS = new Set(["AUTHOR", "USER"]);
 const INTERNAL_ELEMENT_SELECTOR = [
   "skeleton-layout-element-inspector",
   "skeleton-layout-overflow-overlay",
+  "skeleton-layout-grid-overlay",
   "skeleton-layout-inspector-margin-overlay",
   "skeleton-layout-inspector-border-overlay",
   "skeleton-layout-inspector-padding-overlay",
@@ -117,6 +119,9 @@ function normalizeStyle(style = {}) {
     mode: QUICK_MODES.includes(style.mode)
       ? style.mode
       : DEFAULT_CONFIG.style.mode,
+    gridVisualization: isBoolean(style.gridVisualization)
+      ? style.gridVisualization
+      : DEFAULT_CONFIG.style.gridVisualization,
     bgColor: normalizedBackground(style.bgColor),
     backgroundOpacity: normalizedInteger(
       style.backgroundOpacity,
@@ -221,7 +226,6 @@ export function configForMode(candidate, mode) {
     bgColor: "default",
     textColor: "default",
     outlineStyle: "none",
-    overflowDetection: false,
     elementInspector: false,
   };
 
@@ -253,7 +257,6 @@ export function presetConfigForMode(mode) {
       outlineColor: "#FFFFFF",
       outlineWidth: 1,
       overrideBorder: true,
-      overflowDetection: false,
       elementInspector: false,
     });
   } else if (normalizedMode === "inspector") {
@@ -261,7 +264,6 @@ export function presetConfigForMode(mode) {
       bgColor: "default",
       textColor: "default",
       outlineStyle: "none",
-      overflowDetection: false,
       elementInspector: true,
     });
   }

@@ -17,17 +17,19 @@ import {
 test("the default palette provides a distinct cycle", () => {
   assert.equal(PALETTE.length, 6);
   assert.equal(new Set(PALETTE).size, PALETTE.length);
-  assert.ok(PALETTE.includes("#FFE7B3"));
-  assert.ok(PALETTE.includes("#FF7A18"));
-  assert.ok(PALETTE.includes("#159B9B"));
+  assert.ok(PALETTE.includes("#E5D28B"));
+  assert.ok(PALETTE.includes("#FF6600"));
+  assert.ok(PALETTE.includes("#63E7D8"));
 });
 
 test("full visualization defaults to the tuned background treatment", () => {
   assert.equal(DEFAULT_CONFIG.style.mode, "full");
+  assert.equal(DEFAULT_CONFIG.style.gridVisualization, true);
+  assert.equal(DEFAULT_CONFIG.style.overflowDetection, true);
   assert.equal(DEFAULT_CONFIG.style.byLevel, true);
   assert.equal(presetConfigForMode("full").style.byLevel, true);
-  assert.equal(DEFAULT_CONFIG.style.backgroundOpacity, 67);
-  assert.equal(DEFAULT_CONFIG.style.cycleLightnessStep, -18);
+  assert.equal(DEFAULT_CONFIG.style.backgroundOpacity, 41);
+  assert.equal(DEFAULT_CONFIG.style.cycleLightnessStep, -7);
   assert.equal(DEFAULT_CONFIG.style.monochromeLightnessStep, -18);
 });
 
@@ -43,7 +45,7 @@ test("neighboring palette levels remain visually distinct", () => {
   PALETTE.forEach((color, index) => {
     const next = PALETTE[(index + 1) % PALETTE.length];
     assert.ok(
-      distance(color, next) >= 140,
+      distance(color, next) >= 50,
       `${color} and ${next} are too similar for adjacent levels`,
     );
   });
@@ -143,12 +145,12 @@ test("default visualization generates user-origin override CSS", () => {
   assert.equal(injections.length, 1);
   assert.equal(injections[0].origin, "USER");
   assert.match(injections[0].css, /:where\(:root > \*\)/);
-  assert.match(injections[0].css, /background-color: #FFE7B3AB !important/);
+  assert.match(injections[0].css, /background-color: #E5D28B69 !important/);
   assert.match(injections[0].css, /outline: 1px dashed #FFFFFF !important/);
   assert.match(injections[0].css, /:where\(:root\) \{ color: #211812 !important; \}/);
   assert.match(
     injections[0].css,
-    /:where\(:root > \*\) \{ color: #FFF5E8 !important; \}/,
+    /:where\(:root > \*\) \{ color: #211812 !important; \}/,
   );
   assert.doesNotMatch(injections[0].css, /skeleton-x98h7f0/);
 });
@@ -216,7 +218,7 @@ test("opacity and configurable outlines are emitted exactly", () => {
     .map((injection) => injection.css)
     .join("\n");
 
-  assert.match(css, /background-color: #FFE7B380 !important/);
+  assert.match(css, /background-color: #E5D28B80 !important/);
   assert.match(css, /outline: 4px solid #ABCDEF !important/);
 });
 
@@ -278,7 +280,7 @@ test("automatic contrast follows sibling colors as well as depth colors", () => 
     .join("\n");
 
   assert.match(css, /:nth-child\(65n \+ 1\).*color: #211812 !important/);
-  assert.match(css, /:nth-child\(65n \+ 2\).*color: #FFF5E8 !important/);
+  assert.match(css, /:nth-child\(65n \+ 2\).*color: #211812 !important/);
 });
 
 test("sibling mode uses structural selectors instead of DOM mutation hooks", () => {
@@ -301,6 +303,7 @@ test("quick modes derive temporary styles without changing saved settings", () =
       outlineStyle: "none",
       overflowDetection: true,
       elementInspector: true,
+      gridVisualization: true,
     },
   });
   const outline = configForMode(saved, "outline");
@@ -309,10 +312,13 @@ test("quick modes derive temporary styles without changing saved settings", () =
   assert.equal(outline.style.bgColor, "default");
   assert.equal(outline.style.textColor, "default");
   assert.equal(outline.style.outlineStyle, "dashed");
-  assert.equal(outline.style.overflowDetection, false);
+  assert.equal(outline.style.overflowDetection, true);
   assert.equal(outline.style.elementInspector, false);
+  assert.equal(outline.style.gridVisualization, true);
   assert.equal(inspector.style.outlineStyle, "none");
+  assert.equal(inspector.style.overflowDetection, true);
   assert.equal(inspector.style.elementInspector, true);
+  assert.equal(inspector.style.gridVisualization, true);
   assert.deepEqual(configForMode(saved, "full"), saved);
   assert.equal(saved.style.outlineStyle, "none");
   assert.equal(

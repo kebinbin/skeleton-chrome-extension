@@ -27,4 +27,4 @@ Overflow diagnostics are intentionally labeled experimental. They identify likel
 3. Enable **Developer mode**.
 4. Select **Load unpacked** and choose the extracted folder containing `manifest.json`.
 
-See the [documentation](https://kebinbin.github.io/skeleton-chrome-extension/docs.html) for settings, shortcuts, compatibility, and limitations.
+See the [documentation](https://kebinbin.github.io/skeleton-chrome-extension/docs) for settings, shortcuts, compatibility, and limitations.

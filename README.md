@@ -10,8 +10,8 @@
 
 <p align="center">
   <a href="https://kebinbin.github.io/skeleton-chrome-extension/">Website</a> ·
-  <a href="https://kebinbin.github.io/skeleton-chrome-extension/docs.html">Documentation</a> ·
-  <a href="https://kebinbin.github.io/skeleton-chrome-extension/privacy.html">Privacy</a>
+  <a href="https://kebinbin.github.io/skeleton-chrome-extension/docs">Documentation</a> ·
+  <a href="https://kebinbin.github.io/skeleton-chrome-extension/privacy">Privacy</a>
 </p>
 
 Skeleton Layout is a focused Chrome extension for frontend engineers and designers. It applies configurable background colors and outlines to rendered page elements so nesting, spacing, overflow, and unexpected wrappers become immediately visible.
@@ -57,12 +57,19 @@ Chrome DevTools offers excellent element inspection and dedicated Grid, Flexbox,
 
 ## Install locally
 
-1. Clone or download this repository.
-2. Open `chrome://extensions` in Chrome.
-3. Enable **Developer mode**.
-4. Select **Load unpacked**.
-5. Choose the directory containing `manifest.json`.
-6. Pin Skeleton Layout to the toolbar.
+Skeleton Layout is not yet published in the Chrome Web Store. Until then, use
+the packaged release ZIP instead of loading the whole repository:
+
+1. Download `skeleton-layout-v0.3.0.zip` from the latest GitHub release.
+2. Extract the ZIP file.
+3. Open `chrome://extensions` in Chrome.
+4. Enable **Developer mode**.
+5. Select **Load unpacked**.
+6. Choose the extracted folder that contains `manifest.json`.
+7. Pin Skeleton Layout to the toolbar.
+
+Chrome cannot install the ZIP directly. It needs the extracted folder, and the
+selected folder must be the one with `manifest.json` at its root.
 
 Click the toolbar icon on a normal `http`, `https`, or permitted local-file page. To configure the visualization without leaving the page, right-click the toolbar icon and choose **Open settings beside this page**. The same menu provides **Quick mode → Hover inspector** and the other modes without requiring keyboard shortcuts.
 
@@ -118,7 +125,7 @@ npm install
 npm test
 npm run check
 npm run test:browser
-npm run package
+npm run build
 ```
 
 `npm run test:browser` launches the locally installed Google Chrome in normal
@@ -127,11 +134,18 @@ mode cycles, draft preservation, save, and revert behavior. On systems where
 Chrome is installed elsewhere, set `CHROME_PATH` to its executable. This smoke
 test is intentionally separate from the fast headless test suite.
 
-`npm run package` validates the production file set and writes a deterministic,
-dependency-free Chrome Web Store archive to `dist/`. Development files, source
-SVGs, tests, repository metadata, and operating-system metadata are excluded.
+`npm run build` runs the complete validation suite and then regenerates the
+deterministic, dependency-free Chrome Web Store archive in `dist/`. Use
+`npm run package` when only the archive needs to be regenerated. Development
+files, source SVGs, tests, repository metadata, and operating-system metadata
+are excluded.
 
 After changing the extension, select **Reload** for Skeleton Layout on `chrome://extensions`, then refresh any test tabs.
+
+For active development, you can also load the repository root directly with
+**Load unpacked** because it contains the working `manifest.json`. For normal
+manual installation, prefer the release ZIP so Chrome only sees the extension
+runtime files.
 
 ## Publishing
 

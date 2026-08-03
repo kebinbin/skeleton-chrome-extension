@@ -20,6 +20,8 @@ const RELEASE_ROOT_FILES = [
 const REQUIRED_RUNTIME_FILES = [
   "content/element-inspector-logic.js",
   "content/element-inspector.js",
+  "content/grid-overlay-logic.js",
+  "content/grid-overlay.js",
   "content/overflow-logic.js",
   "content/overflow.js",
   "css/options.css",

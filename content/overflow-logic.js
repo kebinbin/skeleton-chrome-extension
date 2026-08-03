@@ -34,6 +34,7 @@
     rectRight,
     viewportWidth,
     pageScrollsHorizontally,
+    isConstrainedLayoutItem = false,
   }) {
     const states = [];
     const horizontal = horizontalDelta > OVERFLOW_TOLERANCE;
@@ -44,6 +45,22 @@
     }
     if (!isDocumentElement && vertical && isClippingValue(overflowY)) {
       states.push("clipped-y");
+    }
+    if (
+      !isDocumentElement &&
+      isConstrainedLayoutItem &&
+      horizontal &&
+      overflowX === "visible"
+    ) {
+      states.push("overflow-x");
+    }
+    if (
+      !isDocumentElement &&
+      isConstrainedLayoutItem &&
+      vertical &&
+      overflowY === "visible"
+    ) {
+      states.push("overflow-y");
     }
 
     const extendsViewport =

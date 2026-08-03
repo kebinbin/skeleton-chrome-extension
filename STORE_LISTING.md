@@ -70,7 +70,7 @@ Review these answers again in the current Developer Dashboard before submission;
 - [ ] A screenshot of the settings experience.
 - [ ] Optional 440×280 small promotional tile.
 - [ ] Optional 1400×560 marquee promotional tile.
-- [x] Public privacy policy: https://kebinbin.github.io/skeleton-chrome-extension/privacy.html
+- [x] Public privacy policy: https://kebinbin.github.io/skeleton-chrome-extension/privacy
 - [x] Support URL: https://github.com/kebinbin/skeleton-chrome-extension/issues
 - [x] MIT repository license.
 
@@ -103,7 +103,7 @@ Test the unpacked production directory in a clean Chrome profile:
 
 - [ ] Run `npm run check`.
 - [ ] Run `npm run test:browser` against the release candidate.
-- [ ] Run `npm run package` and load the generated archive from `dist/` into a clean profile.
+- [ ] Run `npm run package`, extract the generated ZIP from `dist/`, and load the extracted folder into a clean profile.
 - [ ] Confirm `git status` contains only intended release changes.
 - [ ] Confirm manifest and package versions match.
 - [ ] Add release notes and tag the reviewed commit.

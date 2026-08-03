@@ -10,6 +10,7 @@
   const shadow = host.attachShadow({ mode: "closed" });
   const style = document.createElement("style");
   const canvas = document.createElement("canvas");
+  const OVERFLOW_LAYER_Z_INDEX = 2147483646;
   style.textContent = `
     :host {
       all: initial !important;
@@ -18,14 +19,14 @@
       left: 0 !important;
       width: 0 !important;
       height: 0 !important;
-      z-index: 2147483647 !important;
+      z-index: ${OVERFLOW_LAYER_Z_INDEX} !important;
       pointer-events: none !important;
     }
     canvas {
       all: initial !important;
       position: fixed !important;
       inset: 0 !important;
-      z-index: 2147483647 !important;
+      z-index: ${OVERFLOW_LAYER_Z_INDEX} !important;
       width: 100vw !important;
       height: 100vh !important;
       pointer-events: none !important;
@@ -71,6 +72,19 @@
   let cachedCandidateCount = 0;
   let cachedScanTruncated = false;
 
+  function isConstrainedLayoutItem(element, parentDisplayCache) {
+    const parent = element.parentElement;
+    if (!parent) return false;
+    let parentDisplay = parentDisplayCache.get(parent);
+    if (!parentDisplay) {
+      parentDisplay = getComputedStyle(parent).display;
+      parentDisplayCache.set(parent, parentDisplay);
+    }
+    return ["grid", "inline-grid", "flex", "inline-flex"].includes(
+      parentDisplay,
+    );
+  }
+
   function elementGeometry(element) {
     const styleDeclaration = getComputedStyle(element);
     if (
@@ -92,6 +106,7 @@
     styleDeclaration,
     viewportWidth,
     pageScrollsHorizontally,
+    parentDisplayCache,
   ) {
     const isDocumentElement =
       element === document.documentElement || element === document.body;
@@ -108,6 +123,10 @@
         rectRight: rect.right,
         viewportWidth,
         pageScrollsHorizontally,
+        isConstrainedLayoutItem: isConstrainedLayoutItem(
+          element,
+          parentDisplayCache,
+        ),
       }),
     );
   }
@@ -176,6 +195,7 @@
     }
     let scannedCount = 0;
     const candidates = [];
+    const parentDisplayCache = new WeakMap();
     const scanStartedAt = performance.now();
     let scanTruncated = false;
 
@@ -210,6 +230,7 @@
         styleDeclaration,
         viewportWidth,
         pageScrollsHorizontally,
+        parentDisplayCache,
       );
       if (states.size === 0) continue;
       candidates.push({ element, rect, states });
@@ -299,7 +320,7 @@
 
     if (visibleMarkerCount > 0) {
       const pageOverflowCount = visiblePageOverflowCount;
-      const possibleClipCount = visibleMarkerCount - pageOverflowCount;
+      const possibleIssueCount = visibleMarkerCount - pageOverflowCount;
       const summaryParts = [];
       if (pageOverflowCount > 0) {
         summaryParts.push(
@@ -308,10 +329,10 @@
           }`,
         );
       }
-      if (possibleClipCount > 0) {
+      if (possibleIssueCount > 0) {
         summaryParts.push(
-          `${possibleClipCount} possible clip${
-            possibleClipCount === 1 ? "" : "s"
+          `${possibleIssueCount} possible overflow${
+            possibleIssueCount === 1 ? "" : "s"
           }`,
         );
       }

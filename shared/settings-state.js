@@ -64,7 +64,10 @@ export class SettingsState {
     const style =
       mode === "full"
         ? fullStyle
-        : presetConfigForMode(mode).style;
+        : {
+            ...presetConfigForMode(mode).style,
+            gridVisualization: fullStyle.gridVisualization,
+          };
 
     return this.updateDraft({ style, fullStyle });
   }

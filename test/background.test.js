@@ -164,6 +164,7 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
           target: structuredClone(injection.target),
           files: injection.files ? [...injection.files] : undefined,
           functionCall: typeof injection.func === "function",
+          args: injection.args ? structuredClone(injection.args) : undefined,
         });
         return [];
       },
@@ -425,6 +426,7 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
       ...DEFAULT_CONFIG.style,
       overrideBgColor: false,
       overrideBorder: false,
+      gridVisualization: true,
       overflowDetection: true,
       elementInspector: true,
     },
@@ -449,6 +451,16 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
   assert.equal(session.data["activeTab:17"].overflowDetection, true);
   await waitFor(
     () =>
+      executed.some(({ files }) => files?.includes("content/grid-overlay.js")),
+    "enabled grid visualization did not install grid-column guides",
+  );
+  assert.equal(session.data["activeTab:17"].gridVisualization, true);
+  assert.ok(
+    executed.some(({ args }) => args?.[0] === "full"),
+    "grid-column guides did not receive the active mode",
+  );
+  await waitFor(
+    () =>
       executed.some(({ files }) =>
         files?.includes("content/element-inspector.js"),
       ),
@@ -464,6 +476,7 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
       bgColor: "default",
       textColor: "default",
       outlineStyle: "dashed",
+      gridVisualization: true,
       overflowDetection: false,
       elementInspector: false,
     },
@@ -477,6 +490,10 @@ test("service worker toggles, removes exact CSS, reapplies, and fails safely", a
     "saved mode did not update the enabled tab",
   );
   assert.equal(badges.at(-1).text, "OL");
+  assert.ok(
+    executed.some(({ args }) => args?.[0] === "outline"),
+    "outline mode did not update enabled grid-column guides",
+  );
 
   const badgeCountBeforeActivation = badges.length;
   tabActivated.dispatch({ tabId: 17, windowId: 1 });
