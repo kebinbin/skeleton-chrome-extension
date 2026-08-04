@@ -1,163 +1,372 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
   <head>
-    <title>Skeleton Layout Configuration Options</title>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Skeleton Layout settings</title>
+    <link rel="stylesheet" href="css/options.css" />
   </head>
   <body>
-    <div class="select-wrapper">
-      <select class="input" id="bgColor">
-        <option value="solidMono">Mono colored (solid) background</option>
-        <option value="semitransparentMono">
-          Mono colored (semi-transparent) background
-        </option>
-        <option value="solidColorful">Colorful (solid) background</option>
-        <option value="semitransparentColorful">
-          Colorful (semi-transparent) background
-        </option>
-        <option value="default">Default background</option>
-      </select>
-    </div>
-    <div class="select-wrapper">
-      <select class="input" id="borderType">
-        <option value="darkThin">Dark thin border</option>
-        <option value="darkThick">Dark thick border</option>
-        <option value="lightThin">Light thin border</option>
-        <option value="lightThick">Light thick border</option>
-        <option value="default">Default border</option>
-      </select>
-    </div>
-    <div class="select-wrapper">
-      <select class="input" id="textColor">
-        <option value="dark">Dark text color</option>
-        <option value="light">Light text color</option>
-        <option value="default">Default text color</option>
-      </select>
-    </div>
-    <div class="input">
-      <input type="checkbox" id="byLevel" />
-      <label>Apply background color by level</label>
-    </div>
-    <div class="input">
-      <input type="checkbox" id="overrideBgColor" />
-      <label>Override background color</label>
-    </div>
-    <div class="input">
-      <input type="checkbox" id="overrideBorder" />
-      <label>Override border</label>
-    </div>
-    <div class="input">
-      <input type="checkbox" id="overrideTextColor" />
-      <label>Override text color</label>
-    </div>
-    <div class="input">
-      <input type="checkbox" id="forceReload" />
-      <label>Force reload on config changes</label>
-    </div>
+    <main class="settings-shell">
+      <header class="page-header">
+        <h1>Visualization settings</h1>
+        <p>Customize how page structure is highlighted.</p>
+      </header>
 
-    <div class="bottom-bar">
-      <div class="buttons">
-        <button id="save">SAVE</button>
-        <button id="saveAndClose">SAVE / CLOSE</button>
-      </div>
-      <div id="status"></div>
-    </div>
+      <form id="settingsForm">
+        <div class="settings-grid">
+          <section
+            class="settings-panel settings-panel--wide"
+            aria-labelledby="modeHeading"
+          >
+            <div class="section-header">
+              <button
+                class="section-toggle"
+                type="button"
+                aria-expanded="true"
+                aria-controls="modeContent"
+                data-section-toggle
+              >
+                <span class="section-title" id="modeHeading">Mode</span>
+                <span class="section-chevron" aria-hidden="true"></span>
+              </button>
+            </div>
 
-    <script src="options.js"></script>
-    <style>
-      body {
-        height: 100%;
-        overflow: hidden;
-        padding: 20px;
-      }
+            <div class="section-content" id="modeContent">
+              <div class="field">
+                <label for="visualizationMode">Visualization</label>
+                <select id="visualizationMode" name="visualizationMode">
+                  <option value="full">Full visualization</option>
+                  <option value="outline">Outline only</option>
+                  <option value="inspector">Hover inspector</option>
+                </select>
+                <small>
+                  Selecting a mode applies its preset to the settings below.
+                </small>
+              </div>
 
-      select {
-        -webkit-appearance: none;
-        appearance: none;
-      }
-      #bgColor,
-      #borderType,
-      #textColor {
-        padding: 10px 12px;
-        margin-top: 10px;
-        margin-bottom: 10px;
-      }
+              <label class="check-row standalone-toggle" for="gridVisualization">
+                <span>
+                  <strong>Enable grid visualization</strong>
+                  <small>Draw the resolved columns of CSS Grid containers.</small>
+                </span>
+                <input
+                  type="checkbox"
+                  id="gridVisualization"
+                  name="gridVisualization"
+                />
+              </label>
 
-      #bgColor {
-        margin-top: 15px;
-      }
-      #textColor {
-        margin-bottom: 20px;
-      }
+              <div class="shortcut-card">
+                <span>
+                  <strong>Quick modes</strong>
+                  <small>Shortcuts can be reassigned in Chrome.</small>
+                </span>
+                <dl>
+                  <div>
+                    <dt>Toggle</dt>
+                    <dd><kbd>Ctrl/⌘</kbd><kbd>Shift</kbd><kbd>L</kbd></dd>
+                  </div>
+                  <div>
+                    <dt>Cycle modes</dt>
+                    <dd><kbd>Ctrl/⌘</kbd><kbd>Shift</kbd><kbd>Y</kbd></dd>
+                  </div>
+                </dl>
+                <small>
+                  Cycle: full → outline → inspector. Direct mode
+                  commands are available in Chrome's extension shortcuts.
+                </small>
+              </div>
+            </div>
+          </section>
 
-      .select-wrapper {
-        position: relative;
-      }
+          <section
+            class="settings-panel settings-panel--wide"
+            aria-labelledby="backgroundHeading"
+          >
+            <div class="section-header">
+              <button
+                class="section-toggle"
+                type="button"
+                aria-expanded="true"
+                aria-controls="backgroundContent"
+                data-section-toggle
+              >
+                <span class="section-title" id="backgroundHeading">Background</span>
+                <span class="section-chevron" aria-hidden="true"></span>
+              </button>
+            </div>
 
-      .select-wrapper::after {
-        content: "▼";
-        font-size: 0.75rem;
-        top: 12px;
-        right: 12px;
-        position: absolute;
-        color: #6e6e6e;
-        pointer-events: none;
-      }
+            <div class="section-content" id="backgroundContent">
 
-      input[type="checkbox"] {
-        margin-right: 6px;
-      }
-      input[type="checkbox"]:disabled + label {
-        color: #6e6e6e;
-      }
-      .input {
-        display: flex;
-        align-items: center;
-        width: 100%;
-        padding: 2px 0;
-        margin: 4px 0;
-        border-radius: 3px;
-      }
-      .buttons {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-      }
-      button {
-        display: flex;
-        flex-grow: 1;
-        text-align: center;
-        justify-content: center;
-        border-radius: 3px;
-        border-width: 1px;
-        box-shadow: none;
-        border-color: rgb(52, 52, 52);
-        padding: 8px 20px;
-        font-weight: 600;
-        color: rgb(52, 52, 52);
-        background-color: #fff;
-      }
+            <div class="field">
+              <label for="bgColor">Treatment</label>
+              <select id="bgColor" name="bgColor">
+                <option value="default">Keep page's background</option>
+                <option value="monochrome">Monochrome</option>
+                <option value="colorful">Colorful</option>
+              </select>
+            </div>
 
-      #saveAndClose {
-        background-color: rgb(52, 52, 52);
-        color: #fff;
-      }
-      .bottom-bar {
-        border-top: 0.05rem solid #bebebe;
-        margin-top: 25px;
-        padding-top: 20px;
-        /* display: flex;
-        align-items: center; */
-      }
-      #status {
-        display: flex;
-        flex-grow: 1;
-        padding: 0 5px;
-        margin-top: 10px;
-        height: 10px;
-        justify-content: flex-end;
-        color: #6e6e6e;
-      }
-    </style>
+            <div class="customization-panel" id="colorCustomization" hidden>
+              <h3 id="colorCustomizationTitle">Customize colors</h3>
+              <p id="colorCustomizationDescription"></p>
+              <div class="palette-grid" id="paletteColors"></div>
+              <div class="range-field">
+                <label for="cycleLightnessStep">
+                  <span id="lightnessStepLabel">Lightness progression</span>
+                  <output id="cycleLightnessValue" for="cycleLightnessStep">
+                    +6%
+                  </output>
+                </label>
+                <input
+                  type="range"
+                  id="cycleLightnessStep"
+                  name="cycleLightnessStep"
+                  min="-30"
+                  max="30"
+                  step="1"
+                />
+                <small id="lightnessStepHelp"></small>
+              </div>
+              <div class="range-field">
+                <label for="backgroundOpacity">
+                  <span>Opacity</span>
+                  <output id="backgroundOpacityValue" for="backgroundOpacity">
+                    100%
+                  </output>
+                </label>
+                <input
+                  type="range"
+                  id="backgroundOpacity"
+                  name="backgroundOpacity"
+                  min="10"
+                  max="100"
+                  step="1"
+                />
+              </div>
+              <button class="palette-reset" type="button" id="resetPalette">
+                Restore color defaults
+              </button>
+            </div>
+
+            <div class="toggle-group" id="backgroundToggles">
+              <label class="check-row" for="byLevel">
+                <span>
+                  <strong>Color by nesting depth</strong>
+                  <small>Give each parent-child level a consistent color.</small>
+                </span>
+                <input type="checkbox" id="byLevel" name="byLevel" />
+              </label>
+
+              <label class="check-row" for="overrideBgColor">
+                <span>
+                  <strong>Override page backgrounds</strong>
+                  <small>Make visualization colors win over page styles.</small>
+                </span>
+                <input
+                  type="checkbox"
+                  id="overrideBgColor"
+                  name="overrideBgColor"
+                />
+              </label>
+            </div>
+            </div>
+          </section>
+
+          <section class="settings-panel" aria-labelledby="outlineHeading">
+            <div class="section-header">
+              <button
+                class="section-toggle"
+                type="button"
+                aria-expanded="true"
+                aria-controls="outlineContent"
+                data-section-toggle
+              >
+                <span class="section-title" id="outlineHeading">Outline</span>
+                <span class="section-chevron" aria-hidden="true"></span>
+              </button>
+            </div>
+
+            <div class="section-content" id="outlineContent">
+              <div class="field">
+                <label for="outlineStyle">Style</label>
+                <select id="outlineStyle" name="outlineStyle">
+                  <option value="dashed">Dashed</option>
+                  <option value="solid">Solid</option>
+                  <option value="none">No outline</option>
+                </select>
+              </div>
+
+              <div class="customization-panel" id="outlineCustomization">
+
+                <label class="color-field" for="outlineColor" id="outlineColorField">
+                  <span>Color</span>
+                  <span>
+                    <input type="color" id="outlineColor" name="outlineColor" />
+                    <output id="outlineColorValue" for="outlineColor"></output>
+                  </span>
+                </label>
+
+                <small id="automaticOutlineColorHelp" hidden>
+                  Color follows each element's foreground for automatic contrast.
+                </small>
+
+                <div class="range-field">
+                  <label for="outlineWidth">
+                    <span>Thickness</span>
+                    <output id="outlineWidthValue" for="outlineWidth">1 px</output>
+                  </label>
+                  <input
+                    type="range"
+                    id="outlineWidth"
+                    name="outlineWidth"
+                    min="1"
+                    max="4"
+                    step="1"
+                  />
+                  <small>Thin to thick, without obscuring the layout.</small>
+                </div>
+              </div>
+
+              <label class="check-row standalone-toggle" for="overrideBorder" id="outlineOverrideRow">
+                <span>
+                  <strong>Override page outlines</strong>
+                  <small>Keep diagnostic outlines above page styles.</small>
+                </span>
+                <input
+                  type="checkbox"
+                  id="overrideBorder"
+                  name="overrideBorder"
+                />
+              </label>
+            </div>
+          </section>
+
+          <section class="settings-panel" aria-labelledby="textHeading">
+            <div class="section-header">
+              <button
+                class="section-toggle"
+                type="button"
+                aria-expanded="true"
+                aria-controls="textContent"
+                data-section-toggle
+              >
+                <span class="section-title" id="textHeading">Text</span>
+                <span class="section-chevron" aria-hidden="true"></span>
+              </button>
+            </div>
+
+            <div class="section-content" id="textContent">
+
+            <div class="field">
+              <label for="textColor">Treatment</label>
+              <select id="textColor" name="textColor">
+                <option value="auto">Automatic contrast</option>
+                <option value="default">Keep page colors</option>
+                <option value="custom">Custom color</option>
+              </select>
+            </div>
+
+            <div class="customization-panel" id="textColorCustomization" hidden>
+              <label class="color-field" for="customTextColor">
+                <span>Custom color</span>
+                <span>
+                  <input
+                    type="color"
+                    id="customTextColor"
+                    name="customTextColor"
+                  />
+                  <output
+                    id="customTextColorValue"
+                    for="customTextColor"
+                  ></output>
+                </span>
+              </label>
+            </div>
+            </div>
+          </section>
+
+          <section
+            class="settings-panel settings-panel--wide"
+            aria-labelledby="diagnosticsHeading"
+          >
+            <div class="section-header">
+              <button
+                class="section-toggle"
+                type="button"
+                aria-expanded="true"
+                aria-controls="diagnosticsContent"
+                data-section-toggle
+              >
+                <span class="section-title" id="diagnosticsHeading">
+                  Diagnostics
+                </span>
+                <span class="section-chevron" aria-hidden="true"></span>
+              </button>
+            </div>
+
+            <div class="section-content" id="diagnosticsContent">
+              <label class="check-row" for="elementInspector">
+                <span>
+                  <strong>Show element details on hover</strong>
+                  <small>
+                    Inspect the box model, layout type, positioning, stacking,
+                    dimensions, and overflow.
+                  </small>
+                </span>
+                <input
+                  type="checkbox"
+                  id="elementInspector"
+                  name="elementInspector"
+                />
+              </label>
+
+              <label class="check-row" for="overflowDetection">
+                <span>
+                  <strong>
+                    Detect likely overflow
+                    <span class="experimental-badge">Experimental</span>
+                  </strong>
+                  <small>
+                    Show confirmed horizontal page overflow in red and possible
+                    clipped content in amber. Intentional scroll containers are
+                    ignored.
+                  </small>
+                </span>
+                <input
+                  type="checkbox"
+                  id="overflowDetection"
+                  name="overflowDetection"
+                />
+              </label>
+            </div>
+          </section>
+        </div>
+
+        <div class="footer">
+          <p id="status" class="status" role="status" aria-live="polite"></p>
+          <div class="actions">
+            <button class="button button--quiet" type="button" id="reset">
+              Reset
+            </button>
+            <button
+              class="button button--quiet"
+              type="button"
+              id="revert"
+              disabled
+            >
+              Revert
+            </button>
+            <button class="button button--secondary" type="submit">Save</button>
+            <button class="button button--primary" type="button" id="saveAndClose">
+              Save &amp; close
+            </button>
+          </div>
+        </div>
+      </form>
+    </main>
+
+    <script type="module" src="options.js"></script>
   </body>
 </html>

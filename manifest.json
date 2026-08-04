@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Skeleton Layout",
-  "description": "Add layout skeleton to any page",
-  "version": "0.2",
+  "description": "Reveal page structure with instant, configurable layout colors and outlines.",
+  "version": "0.3.0",
+  "minimum_chrome_version": "116",
   "icons": {
     "16": "images/icon-16.png",
     "32": "images/icon-32.png",
@@ -10,14 +11,54 @@
     "128": "images/icon-128.png"
   },
   "action": {
-    "default_title": "Click to show layout"
+    "default_title": "Show layout structure",
+    "default_icon": {
+      "16": "images/icon-16.png",
+      "32": "images/icon-32.png",
+      "48": "images/icon-48.png",
+      "128": "images/icon-128.png"
+    }
   },
-  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      }
+    },
+    "cycle-visualization-mode": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Cycle Skeleton Layout visualization modes"
+    },
+    "activate-full-mode": {
+      "description": "Use the saved full visualization"
+    },
+    "activate-outline-mode": {
+      "description": "Use outline-only visualization"
+    },
+    "activate-inspector-mode": {
+      "description": "Use the hover inspector only"
+    }
+  },
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "scripting",
+    "sidePanel",
+    "storage"
+  ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "options_ui": {
     "page": "options.html",
     "open_in_tab": false
+  },
+  "side_panel": {
+    "default_path": "options.html"
   }
 }

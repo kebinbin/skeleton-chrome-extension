@@ -1,0 +1,57 @@
+name: Bug report
+description: Report behavior that is incorrect or unexpected.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve Skeleton Layout. Please remove private page content from screenshots and recordings.
+  - type: input
+    id: version
+    attributes:
+      label: Skeleton Layout version
+      placeholder: 0.3.0
+    validations:
+      required: true
+  - type: input
+    id: chrome
+    attributes:
+      label: Chrome version and operating system
+      placeholder: Chrome 138 on macOS 15
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      options:
+        - Full visualization
+        - Outline only
+        - Hover inspector
+        - Overflow diagnostics
+        - Settings or live preview
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Include what you expected and what occurred instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Enable Skeleton Layout on…
+        2. Select…
+        3. Observe…
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add a public reproduction URL, minimal HTML/CSS, screenshots, or service-worker errors if available.

@@ -1,0 +1,23 @@
+{
+  "name": "skeleton-layout",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm run check && npm run package",
+    "check": "node --check background.js && node --check options.js && node --check shared/config.js && node --check shared/settings-state.js && node --check content/overflow-logic.js && node --check content/overflow.js && node --check content/element-inspector-logic.js && node --check content/element-inspector.js && node scripts/release.mjs --check && node --test",
+    "test": "node --test",
+    "test:browser": "node scripts/browser-settings.mjs",
+    "package": "node scripts/release.mjs",
+    "playground:dev": "npm --prefix playground run dev",
+    "playground:build": "npm --prefix playground run build",
+    "site:dev": "npm --prefix site run dev",
+    "site:build": "npm --prefix site run build"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.16.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
