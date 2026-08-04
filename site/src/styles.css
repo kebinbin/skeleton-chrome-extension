@@ -97,6 +97,18 @@ h1, h2, h3 { text-wrap: balance; }
 .feature-grid h3 { margin: 58px 0 12px; font-size: 1.08rem; }
 .feature-grid p { color: var(--muted); font-size: .84rem; line-height: 1.65; }
 
+.workflow-section { padding: 120px 24px; border-top: 1px solid var(--line); background: var(--surface); }
+.workflow-inner { width: min(1220px, 100%); margin-inline: auto; }
+.workflow-heading { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, .78fr); gap: 110px; align-items: start; }
+.workflow-heading h2 { max-width: 720px; margin-bottom: 0; font-size: clamp(2.55rem, 4.5vw, 4.65rem); font-weight: 600; letter-spacing: -.058em; line-height: .98; }
+.workflow-copy { padding: 6px 0 0 34px; border-left: 1px solid var(--line); }
+.workflow-copy p { color: var(--muted); line-height: 1.75; }
+.workflow-copy p:last-child { margin-bottom: 0; }
+.workflow-media { margin: 72px 0 0; }
+.workflow-video-frame { aspect-ratio: 3814 / 2304; }
+.workflow-media video { display: block; width: 100%; height: 100%; background: #111; object-fit: contain; }
+.workflow-media figcaption { margin-top: 13px; color: var(--muted); font: 400 .62rem "DM Mono", monospace; }
+
 .modes-section { scroll-margin-top: 80px; padding: 120px 24px; border-block: 1px solid var(--line); background: var(--surface-soft); }
 .modes-inner { width: min(1220px, 100%); margin-inline: auto; }
 .modes-heading { display: grid; max-width: none; grid-template-columns: minmax(520px, .95fr) minmax(0, .72fr); gap: 24px 64px; align-items: end; }
@@ -187,6 +199,8 @@ kbd { padding: 3px 6px; border: 1px solid #cac7be; border-radius: 5px; backgroun
   .site-header nav > a:nth-child(-n+2) { display: none; }
   .origin { grid-template-columns: 1fr; gap: 38px; }
   .origin-copy { max-width: 720px; }
+  .workflow-heading { grid-template-columns: 1fr; gap: 38px; }
+  .workflow-copy { max-width: 720px; }
   .heading.split { grid-template-columns: 1fr; gap: 20px; }
   .modes-heading { grid-template-columns: 1fr; }
   .modes-heading .eyebrow { grid-column: auto; }
@@ -211,6 +225,10 @@ kbd { padding: 3px 6px; border: 1px solid #cac7be; border-radius: 5px; backgroun
   .hero-visual { margin-top: 52px; border-width: 4px; border-radius: 12px; }
   .section { padding: 82px 0; }
   .origin-copy { padding: 0; border-left: 0; }
+  .workflow-section { padding: 84px 15px; }
+  .workflow-copy { padding: 0; border-left: 0; }
+  .workflow-media { margin-top: 48px; }
+  .workflow-video-frame { border-width: 4px; border-radius: 12px; }
   .feature-grid { grid-template-columns: 1fr; }
   .feature-grid article { min-height: 190px; }
   .feature-grid h3 { margin-top: 44px; }

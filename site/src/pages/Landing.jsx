@@ -21,6 +21,13 @@ const comparisons = [
     alt: "Outline only mode showing page structure without background colors",
   },
   {
+    id: "inspector",
+    title: "Inspector",
+    description: "Shows hovered element details above the page diagnostics.",
+    file: "mode-inspector.webp",
+    alt: "Hover inspector showing layout details for a selected element",
+  },
+  {
     id: "monochrome",
     title: "Monochrome",
     description: "Uses one hue with lightness changes to represent nesting depth.",
@@ -73,9 +80,33 @@ export default function Landing() {
       </div>
     </section>
 
+    <section className="workflow-section" aria-labelledby="workflow-title">
+      <div className="workflow-inner">
+        <div className="workflow-heading">
+          <div>
+            <p className="eyebrow"><span /> Development workflow</p>
+            <h2 id="workflow-title">Keep the structure visible while you code.</h2>
+          </div>
+          <div className="workflow-copy">
+            <p>Leave Skeleton active while your development server updates the page. Element boundaries, nesting, grid tracks, and diagnostics follow the rendered layout without temporary background colors or borders in your CSS.</p>
+            <p>Use it alongside Chrome DevTools: DevTools provides detailed inspection for selected elements and persistent Grid and Flex overlays, while Skeleton keeps its configured page-wide visualization visible during development.</p>
+          </div>
+        </div>
+        <figure className="workflow-media">
+          <div className="workflow-video-frame product-bezel">
+            <video autoPlay controls loop muted playsInline preload="metadata" aria-label="Skeleton updating a page visualization while its layout code changes">
+              <source src={`${import.meta.env.BASE_URL}assets/skeleton-plugin-develop.mp4`} type="video/mp4" />
+              Your browser does not support embedded MP4 video.
+            </video>
+          </div>
+          <figcaption>Layout changes reflected in Skeleton during development.</figcaption>
+        </figure>
+      </div>
+    </section>
+
     <section className="modes-section" id="modes">
       <div className="modes-inner">
-        <div className="heading modes-heading"><p className="eyebrow"><span /> Visualization modes</p><h2>Four views of the same page.</h2><p>Compare the original page with the available outline, monochrome, and colorful visualizations.</p></div>
+        <div className="heading modes-heading"><p className="eyebrow"><span /> Visualization modes</p><h2>Five views of the same page.</h2><p>Compare the original page with outlines, hover inspection, monochrome, and colorful visualizations.</p></div>
         <div className="mode-comparison">
           <figure className="comparison-media">
             <div className="comparison-frame">
